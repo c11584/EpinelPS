@@ -42,8 +42,8 @@ namespace EpinelPS.Utils
                         Console.WriteLine("Gameconfig.json is not found, the game WILL NOT work!");
                         _root = new GameConfigRoot();
                     }
+                    Console.WriteLine("淘宝搜夜辉—夜辉奇妙屋，其他店铺均为倒卖，如遇被骗请差评退款，请勿用于商业用途。");
                     Console.WriteLine("Loaded game config");
-
 
                     _root = JsonConvert.DeserializeObject<GameConfigRoot>(File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "/gameconfig.json"));
 
