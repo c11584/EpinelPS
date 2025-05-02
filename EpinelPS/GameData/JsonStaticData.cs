@@ -690,4 +690,63 @@
     {
         public List<InfracoreRecord> records = [];
     }
+    public class AttractiveCounselCharacterRecord
+    {
+        public int id;
+        public int name_code;
+        public int collect_reward_id;
+    }
+    public class AttractiveCounselCharacterTable
+    {
+        public List<AttractiveCounselCharacterRecord> records = [];
+    }
+
+    public class AttractiveLevelRewardRecord
+    {
+        public int id;
+        public int name_code;
+        public int reward_id;
+        public int attractive_level;
+        public int costume;
+    }
+    public class AttractiveLevelRewardTable
+    {
+        public List<AttractiveLevelRewardRecord> records = [];
+    }
+    public class SubquestRecord
+    {
+        public int id;
+        public int group_id;
+        public int clear_condition_id;
+        public int clear_condition_value;
+        public string conversation_id = "";
+        public string end_messenger_conversation_id = "";
+        public int before_sub_quest_id;
+    }
+    public class SubquestTable
+    {
+        public List<SubquestRecord> records = [];
+    }
+    public class MessengerDialogRecord
+    {
+        public string id = "";
+        public string conversation_id = "";
+        public string jump_target = "";
+        public bool is_opener;
+        public int reward_id;
+    }
+    public class MessengerDialogTable
+    {
+        public List<MessengerDialogRecord> records = [];
+    }
+    public class MessengerMsgConditionRecord
+    {
+        public int id;
+        public string tid = "";
+        public int reward_id;
+    }
+    public class MessengerMsgConditionTable
+    {
+        public List<MessengerMsgConditionRecord> records = [];
+    }
 }

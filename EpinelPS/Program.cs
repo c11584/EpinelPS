@@ -210,6 +210,7 @@ namespace EpinelPS
                     Console.WriteLine("  ls /users - show all users");
                     Console.WriteLine("  cd (user id) - select user by id");
                     Console.WriteLine("  rmuser - delete selected user");
+                    Console.WriteLine("  r - load changes to database from disk. Discards data in memory.");
                     Console.WriteLine("  ban - ban selected user from game");
                     Console.WriteLine("  unban - unban selected user from game");
                     Console.WriteLine("  exit - exit server application");
@@ -301,6 +302,9 @@ namespace EpinelPS
                                         Tid = character.id,  // Tid is the character ID
                                         UltimateLevel = 1
                                     });
+
+                                    user.BondInfo.Add(new() { NameCode = character.name_code, Level = 1 });
+                                    user.AddTrigger(TriggerType.ObtainCharacter, 1, character.name_code);
                                 }
                             }
 
@@ -894,6 +898,10 @@ namespace EpinelPS
                 else if (input == "unban")
                 {
                     Console.WriteLine("Not implemented");
+                }
+                else if (input == "r")
+                {
+                    JsonDb.Reload();
                 }
                 else
                 {

@@ -67,6 +67,11 @@ namespace EpinelPS.StaticInfo
         public readonly Dictionary<int, TowerRecord> towerTable = [];
         public readonly Dictionary<int, TriggerRecord> TriggerTable = [];
         public readonly Dictionary<int, InfracoreRecord> InfracoreTable = [];
+        public readonly Dictionary<int, AttractiveCounselCharacterRecord> AttractiveCounselCharacterTable = [];
+        public readonly Dictionary<int, AttractiveLevelRewardRecord> AttractiveLevelReward = [];
+        public readonly Dictionary<int, SubquestRecord> Subquests = [];
+        public readonly Dictionary<string, MessengerDialogRecord> Messages = [];
+        public readonly Dictionary<int, MessengerMsgConditionRecord> MessageConditions = [];
 
 
         public byte[] Sha256Hash;
@@ -502,7 +507,7 @@ namespace EpinelPS.StaticInfo
             {
                 this.towerTable.Add(obj.id, obj);
             }
-            
+
             var triggerTable = await LoadZip<TriggerTable>("TriggerTable.json", progress);
             foreach (var obj in triggerTable.records)
             {
@@ -513,6 +518,36 @@ namespace EpinelPS.StaticInfo
             foreach (var obj in infracoreTable.records)
             {
                 this.InfracoreTable.Add(obj.id, obj);
+            }
+            
+            var attrData = await LoadZip<AttractiveCounselCharacterTable>("AttractiveCounselCharacterTable.json", progress);
+            foreach (var obj in attrData.records)
+            {
+                this.AttractiveCounselCharacterTable.Add(obj.name_code, obj);
+            }
+
+            var attrLData = await LoadZip<AttractiveLevelRewardTable>("AttractiveLevelRewardTable.json", progress);
+            foreach (var obj in attrLData.records)
+            {
+                this.AttractiveLevelReward.Add(obj.id, obj);
+            }
+
+            var subquest = await LoadZip<SubquestTable>("SubQuestTable.json", progress);
+            foreach (var obj in subquest.records)
+            {
+                this.Subquests.Add(obj.id, obj);
+            }
+
+            var msgs = await LoadZip<MessengerDialogTable>("MessengerDialogTable.json", progress);
+            foreach (var obj in msgs.records)
+            {
+                this.Messages.Add(obj.id, obj);
+            }
+
+            var msgc = await LoadZip<MessengerMsgConditionTable>("MessengerConditionTriggerTable.json", progress);
+            foreach (var obj in msgc.records)
+            {
+                this.MessageConditions.Add(obj.id, obj);
             }
         }
 
@@ -578,6 +613,33 @@ namespace EpinelPS.StaticInfo
                 }
             }
             return -1;
+        }
+        public string? GetMapIdFromDBFieldName(string field)
+        {
+            // Get game map ID from DB Field Name (ex: 1_Normal for chapter 1 normal)
+            string[] keys = field.Split("_");
+            if (int.TryParse(keys[0], out int chapterNum))
+            {
+                string difficulty = keys[1];
+
+                foreach (var item in chapterCampaignData)
+                {
+                    if (difficulty == "Normal" && item.Value.chapter == chapterNum)
+                    {
+                        return item.Value.field_id;
+                    }
+                    else if (difficulty == "Hard" && item.Value.chapter == chapterNum)
+                    {
+                        return item.Value.hard_field_id;
+                    }
+                }
+
+                return null;
+            }
+            else
+            {
+                return keys[0]; // Already a Map ID
+            }
         }
         public int GetNormalChapterNumberFromFieldName(string field)
         {
