@@ -1,5 +1,4 @@
-﻿using EpinelPS.LobbyServer;
-using EpinelPS.StaticInfo;
+﻿using EpinelPS.Data;
 using EpinelPS.Utils;
 using Newtonsoft.Json;
 using Paseto.Builder;
@@ -297,6 +296,7 @@ namespace EpinelPS.Database
         public List<int> CompletedAchievements = [];
         public List<NetMessage> MessengerData = [];
         public ulong LastMessageId = 1;
+        public long LastBadgeSeq = 1;
 
         // Event data
         public Dictionary<int, EventData> EventInfo = new();
@@ -321,19 +321,13 @@ namespace EpinelPS.Database
         public Badge AddBadge(BadgeContents type, string location)
         {
             // generate unique badge SEQ
-            var num = Rng.RandomId();
-
-            while (Badges.Any(x => x.Seq == num))
-            {
-                num = Rng.RandomId();
-            }
 
             var badge = new Badge()
             {
                 BadgeContent = type,
                 Location = location,
                 BadgeGuid = Guid.NewGuid().ToString(),
-                Seq = num
+                Seq = LastBadgeSeq++
             };
 
             Badges.Add(badge);
@@ -441,11 +435,11 @@ namespace EpinelPS.Database
         public bool HasCharacter(int c)
         {
             // Step 1: Get the 'name_code' of the input character with Tid 'c'
-            if (GameData.Instance.characterTable.TryGetValue(c, out var inputCharacterRecord))
+            if (GameData.Instance.CharacterTable.TryGetValue(c, out var inputCharacterRecord))
             {
                 int targetNameCode = inputCharacterRecord.name_code;
                 // Step 2: Find all character IDs in 'characterTable' that have the same 'name_code'
-                var matchingCharacterIds = GameData.Instance.characterTable.Where(kvp => kvp.Value.name_code == targetNameCode).Select(kvp => kvp.Key).ToHashSet();
+                var matchingCharacterIds = GameData.Instance.CharacterTable.Where(kvp => kvp.Value.name_code == targetNameCode).Select(kvp => kvp.Key).ToHashSet();
 
                 // Step 3: Check if any of your owned characters have a 'Tid' in the set of matching IDs
                 return Characters.Any(ownedCharacter => matchingCharacterIds.Contains(ownedCharacter.Tid));
@@ -460,11 +454,11 @@ namespace EpinelPS.Database
         public Character? GetCharacter(int c)
         {
             // Step 1: Get the 'name_code' of the input character with Tid 'c'
-            if (GameData.Instance.characterTable.TryGetValue(c, out var inputCharacterRecord))
+            if (GameData.Instance.CharacterTable.TryGetValue(c, out var inputCharacterRecord))
             {
                 int targetNameCode = inputCharacterRecord.name_code;
                 // Step 2: Find all character IDs in 'characterTable' that have the same 'name_code'
-                var matchingCharacterIds = GameData.Instance.characterTable.Where(kvp => kvp.Value.name_code == targetNameCode).Select(kvp => kvp.Key).ToHashSet();
+                var matchingCharacterIds = GameData.Instance.CharacterTable.Where(kvp => kvp.Value.name_code == targetNameCode).Select(kvp => kvp.Key).ToHashSet();
 
                 // Step 3: Check if any of your owned characters have a 'Tid' in the set of matching IDs
                 return Characters.Where(ownedCharacter => matchingCharacterIds.Contains(ownedCharacter.Tid)).First();
@@ -583,10 +577,12 @@ namespace EpinelPS.Database
         public List<User> Users = [];
 
         public List<AccessToken> LauncherAccessTokens = [];
+        public Dictionary<string, User> AdminAuthTokens = [];
 
         public string ServerName = "<color=\"green\">Private Server</color>";
         public byte[] LauncherTokenKey = [];
         public byte[] EncryptionTokenKey = [];
+        public LogType LogLevel = LogType.Debug;
     }
     internal class JsonDb
     {

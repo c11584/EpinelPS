@@ -2,7 +2,7 @@
 using System.Globalization; // Ensure this is included
 using System.Linq;
 using System.Threading.Tasks;
-using EpinelPS.StaticInfo;
+using EpinelPS.Data;
 using EpinelPS.Utils;
 
 namespace EpinelPS.LobbyServer.Shop
@@ -28,7 +28,7 @@ namespace EpinelPS.LobbyServer.Shop
 
                         if (!decimal.TryParse(normalizedCost, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal price))
                         {
-                            Console.WriteLine($"Failed to parse '{record.cost}' (normalized as '{normalizedCost}'). Cash shop will not work properly.");
+                            Logging.WriteLine($"Failed to parse '{record.cost}' (normalized as '{normalizedCost}'). Cash shop will not work properly.", LogType.Error);
                             continue;
                         }
 

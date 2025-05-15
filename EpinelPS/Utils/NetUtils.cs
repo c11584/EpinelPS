@@ -1,5 +1,5 @@
 ﻿using EpinelPS.Database;
-using EpinelPS.StaticInfo;
+using EpinelPS.Data;
 using Google.Protobuf.WellKnownTypes;
 using System.Collections.Generic;
 using static Google.Rpc.Context.AttributeContext.Types;
@@ -139,7 +139,7 @@ namespace EpinelPS.Utils
 
                 foreach (var c in reward.Character)
                 {
-                    Console.WriteLine("MergeRewards - TODO Character");
+                    Logging.WriteLine("MergeRewards - TODO Character", LogType.Error);
                 }
 
                 if (reward.InfraCoreExp != null)

@@ -4,7 +4,7 @@
 //NetUserCurrencyData fields Type 9000 and Value 150
 //NetRewardData field Currency = new NetUserCurrencyData copy type and value from response.Currencies new NetUserCurrencyData
 using EpinelPS.Database;
-using EpinelPS.StaticInfo;
+using EpinelPS.Data;
 using EpinelPS.Utils;
 
 namespace EpinelPS.LobbyServer.Gacha
@@ -30,7 +30,7 @@ namespace EpinelPS.LobbyServer.Gacha
             var user = GetUser();
             var response = new ResExecuteGacha() { Reward = new NetRewardData() { PassPoint = new() } };
 
-            var entireallCharacterData = GameData.Instance.characterTable.Values.ToList();
+            var entireallCharacterData = GameData.Instance.CharacterTable.Values.ToList();
             // Remove the .Values part since it's already a list.
             // Group by name_code to treat same name_code as one character 
             // Always add characters with grade_core_id == 1 and 101
@@ -215,6 +215,7 @@ namespace EpinelPS.LobbyServer.Gacha
                     // Add "New Character" Badge
                     user.AddBadge(BadgeContents.BadgeContentsNikkeNew, characterData.name_code.ToString());
                     user.AddTrigger(TriggerType.ObtainCharacter, 1, characterData.name_code);
+                    user.AddTrigger(TriggerType.ObtainCharacterNew, 1);
 
                     if (characterData.original_rare == "SSR" || characterData.original_rare == "SR")
                     {

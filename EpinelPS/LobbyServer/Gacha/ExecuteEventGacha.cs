@@ -2,7 +2,7 @@
 //but only does 1x pull
 //its here only so there is no system error on 1x free gacha event
 using EpinelPS.Database;
-using EpinelPS.StaticInfo;
+using EpinelPS.Data;
 using EpinelPS.Utils;
 
 namespace EpinelPS.LobbyServer.Gacha
@@ -26,7 +26,7 @@ namespace EpinelPS.LobbyServer.Gacha
             var user = GetUser();
             var response = new ResExecuteDailyFreeGacha();
 
-			var entireallCharacterData = GameData.Instance.characterTable.Values.ToList();
+			var entireallCharacterData = GameData.Instance.CharacterTable.Values.ToList();
 			// Remove the .Values part since it's already a list.
 			// Group by name_code to treat same name_code as one character 
 			// Always add characters with grade_core_id == 1 and 101

@@ -1,5 +1,5 @@
 ﻿using EpinelPS.Database;
-using EpinelPS.StaticInfo;
+using EpinelPS.Data;
 using EpinelPS.Utils;
 
 namespace EpinelPS.LobbyServer.Character
@@ -40,8 +40,7 @@ namespace EpinelPS.LobbyServer.Character
                     }
                     else
                     {
-                        // TOOD: log this
-                        Console.WriteLine("ERROR: Not enough currency for upgrade");
+                        Logging.WriteLine("ERROR: Not enough currency for upgrade", LogType.WarningAntiCheat);
                         return;
                     }
 

@@ -1,7 +1,7 @@
 ﻿using EpinelPS.Database;
 using EpinelPS.LobbyServer;
 using EpinelPS.LobbyServer.Stage;
-using EpinelPS.StaticInfo;
+using EpinelPS.Data;
 using EpinelPS.Utils;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
@@ -26,10 +26,10 @@ namespace EpinelPS
 
                 GameData.Instance.GetAllCostumes(); // force static data to be loaded
 
-                Console.WriteLine("Register handlers");
+                Logging.WriteLine("Register handlers");
                 LobbyHandler.Init();
 
-                Console.WriteLine("Starting ASP.NET core on port 443");
+                Logging.WriteLine("Starting ASP.NET core on port 443");
                 new Thread(() =>
                 {
                     var builder = WebApplication.CreateBuilder(args);
@@ -168,7 +168,8 @@ namespace EpinelPS
           ]
         }".Replace("{GameMinVer}", GameConfig.Root.GameMinVer).Replace("{GameMaxVer}", GameConfig.Root.GameMaxVer));
 
-                    app.MapGet("/", () => {
+                    app.MapGet("/", () =>
+                    {
                         return $"EpinelPS v{Assembly.GetExecutingAssembly().GetName().Version} - https://github.com/EpinelPS/EpinelPS/";
                     });
 
@@ -204,15 +205,14 @@ namespace EpinelPS
                 else if (input == "?" || input == "help")
                 {
                     Console.WriteLine("EpinelPS CLI");
+                    Console.WriteLine("NOTICE: Admin panel is available at https://localhost/admin/");
                     Console.WriteLine();
                     Console.WriteLine("Commands:");
                     Console.WriteLine("  help - show this help");
-                    Console.WriteLine("  ls /users - show all users");
-                    Console.WriteLine("  cd (user id) - select user by id");
+                    Console.WriteLine("  show users - show all users");
+                    Console.WriteLine("  user (user id) - select user by id");
                     Console.WriteLine("  rmuser - delete selected user");
                     Console.WriteLine("  r - load changes to database from disk. Discards data in memory.");
-                    Console.WriteLine("  ban - ban selected user from game");
-                    Console.WriteLine("  unban - unban selected user from game");
                     Console.WriteLine("  exit - exit server application");
                     Console.WriteLine("  completestage (chapter num)-(stage number) - complete selected stage and get rewards (and all previous ones). Example completestage 15-1. Note that the exact stage number cleared may not be exact.");
                     Console.WriteLine("  sickpulls (requires selecting user first) allows for all characters to have equal chances of getting pulled");
@@ -225,7 +225,7 @@ namespace EpinelPS
                     Console.WriteLine("  AddItem (id) (amount) - Adds an item to the selected user (takes effect on game and server restart)");
                     Console.WriteLine("  AddCharacter (id) - Adds a character to the selected user (takes effect on game and server restart)");
                 }
-                else if (input == "ls /users")
+                else if (input == "show users")
                 {
                     Console.WriteLine("Id,Username,Nickname");
                     foreach (var item in JsonDb.Instance.Users)
@@ -233,7 +233,7 @@ namespace EpinelPS
                         Console.WriteLine($"{item.ID},{item.Username},{item.Nickname}");
                     }
                 }
-                else if (input.StartsWith("cd"))
+                else if (input.StartsWith("user"))
                 {
                     if (args.Length == 2)
                     {
@@ -281,88 +281,39 @@ namespace EpinelPS
                         }
                         else
                         {
-                            // Group characters by name_code and always add those with grade_core_id == 11, 103, and include grade_core_id == 201
-                            var allCharacters = GameData.Instance.characterTable.Values
-                                .GroupBy(c => c.name_code)  // Group by name_code to treat same name_code as one character                     3999 = marian
-                                .SelectMany(g => g.Where(c => c.grade_core_id == 1 || c.grade_core_id == 101 || c.grade_core_id == 201 || c.name_code == 3999))  // Always add characters with grade_core_id == 11 and 103
-                                .ToList();
-
-                            foreach (var character in allCharacters)
-                            {
-                                if (!user.HasCharacter(character.id))
-                                {
-                                    user.Characters.Add(new Database.Character()
-                                    {
-                                        CostumeId = 0,
-                                        Csn = user.GenerateUniqueCharacterId(),
-                                        Grade = 0,
-                                        Level = 1,
-                                        Skill1Lvl = 1,
-                                        Skill2Lvl = 1,
-                                        Tid = character.id,  // Tid is the character ID
-                                        UltimateLevel = 1
-                                    });
-
-                                    user.BondInfo.Add(new() { NameCode = character.name_code, Level = 1 });
-                                    user.AddTrigger(TriggerType.ObtainCharacter, 1, character.name_code);
-                                }
-                            }
-
-                            Console.WriteLine("Added all missing characters to user " + user.Username);
-                            JsonDb.Save();
+                            var rsp = AdminCommands.AddAllCharacters(user);
+                            if (!rsp.ok) Console.WriteLine(rsp.error);
                         }
                     }
                 }
-				else if (input.StartsWith("addallmaterials"))
-				{
-					if (selectedUser == 0)
-					{
-						Console.WriteLine("No user selected");
-					}
-					else
-					{
-						var user = JsonDb.Instance.Users.FirstOrDefault(x => x.ID == selectedUser);
-						if (user == null)
-						{
-							Console.WriteLine("Selected user does not exist");
-							selectedUser = 0;
-							prompt = "# ";
-						}
-						else
-						{
-							int amount = 1; // Default amount if not provided
-							if (args.Length >= 2 && int.TryParse(args[1], out int parsedAmount))
-							{
-								amount = parsedAmount;
-							}
+                else if (input.StartsWith("addallmaterials"))
+                {
+                    if (selectedUser == 0)
+                    {
+                        Console.WriteLine("No user selected");
+                    }
+                    else
+                    {
+                        var user = JsonDb.Instance.Users.FirstOrDefault(x => x.ID == selectedUser);
+                        if (user == null)
+                        {
+                            Console.WriteLine("Selected user does not exist");
+                            selectedUser = 0;
+                            prompt = "# ";
+                        }
+                        else
+                        {
+                            int amount = 1; // Default amount if not provided
+                            if (args.Length >= 2 && int.TryParse(args[1], out int parsedAmount))
+                            {
+                                amount = parsedAmount;
+                            }
 
-							foreach (var tableItem in GameData.Instance.itemMaterialTable.Values)
-							{
-								ItemData? item = user.Items.FirstOrDefault(i => i.ItemType == tableItem.id);
-
-								if (item == null)
-								{
-									user.Items.Add(new ItemData
-									{
-										Isn = user.GenerateUniqueItemId(),
-										ItemType = tableItem.id,
-										Level = 1,
-										Exp = 1,
-										Count = amount
-									});
-								}
-								else
-								{
-									item.Count += amount;
-								}
-							}
-
-							Console.WriteLine($"Added {amount} of all materials to user " + user.Username);
-							JsonDb.Save();
-						}
-					}
-				}
-
+                            var rsp = AdminCommands.AddAllMaterials(user, amount);
+                            if (!rsp.ok) Console.WriteLine(rsp.error);
+                        }
+                    }
+                }
                 else if (input == "finishalltutorials")
                 {
                     if (selectedUser == 0)
@@ -380,16 +331,8 @@ namespace EpinelPS
                         }
                         else
                         {
-                            foreach (var tutorial in GameData.Instance.tutorialTable.Values)
-                            {
-                                if (!user.ClearedTutorialData.ContainsKey(tutorial.id))
-                                {
-                                    user.ClearedTutorialData.Add(tutorial.id, tutorial);
-                                }
-                            }
-
-                            Console.WriteLine("Finished all tutorials for user " + user.Username);
-                            JsonDb.Save();
+                            var rsp = AdminCommands.FinishAllTutorials(user);
+                            if (!rsp.ok) Console.WriteLine(rsp.error);
                         }
                     }
                 }
@@ -410,76 +353,8 @@ namespace EpinelPS
                         }
                         else if (args.Length == 2 && int.TryParse(args[1], out int inputGrade) && inputGrade >= 0 && inputGrade <= 11)
                         {
-                            foreach (var character in user.Characters)
-                            {
-                                // Get current character's Tid
-                                int tid = character.Tid;
-
-                                // Get the character data from the character table
-                                if (!GameData.Instance.characterTable.TryGetValue(tid, out var charData))
-                                {
-                                    Console.WriteLine($"Character data not found for Tid {tid}");
-                                    continue;
-                                }
-
-                                int currentGradeCoreId = charData.grade_core_id;
-                                int nameCode = charData.name_code;
-                                string originalRare = charData.original_rare;
-
-                                // Skip characters with original_rare == "R"
-                                if (originalRare == "R" || nameCode == 3999)
-                                {
-                                    continue;
-                                }
-
-                                // Now handle normal SR and SSR characters
-                                int maxGradeCoreId = 0;
-
-                                // If the character is "SSR", it can have a grade_core_id from 1 to 11
-                                if (originalRare == "SSR")
-                                {
-                                    maxGradeCoreId = 11;  // SSR characters can go from 1 to 11
-
-                                    // Calculate the new grade_core_id within the bounds
-                                    int newGradeCoreId = Math.Min(inputGrade + 1, maxGradeCoreId);  // +1 because inputGrade starts from 0 for SSRs
-
-                                    // Find the character with the same name_code and new grade_core_id
-                                    var newCharData = GameData.Instance.characterTable.Values.FirstOrDefault(c =>
-                                        c.name_code == nameCode && c.grade_core_id == newGradeCoreId);
-
-                                    if (newCharData != null)
-                                    {
-                                        // Update the character's Tid and Grade
-                                        character.Tid = newCharData.id;
-                                        character.Grade = inputGrade;
-                                    }
-
-                                }
-
-                                // If the character is "SR", it can have a grade_core_id from 101 to 103
-                                else if (originalRare == "SR")
-                                {
-                                    maxGradeCoreId = 103;  // SR characters can go from 101 to 103
-
-                                    // Start from 101 and increment based on inputGrade (inputGrade 0 -> grade_core_id 101)
-                                    int newGradeCoreId = Math.Min(101 + inputGrade, maxGradeCoreId);  // Starts at 101
-
-                                    // Find the character with the same name_code and new grade_core_id
-                                    var newCharData = GameData.Instance.characterTable.Values.FirstOrDefault(c =>
-                                        c.name_code == nameCode && c.grade_core_id == newGradeCoreId);
-
-                                    if (newCharData != null)
-                                    {
-                                        // Update the character's Tid and Grade
-                                        character.Tid = newCharData.id;
-                                        character.Grade = inputGrade;
-                                    }
-
-                                }
-
-                            }
-                            Console.WriteLine($"Core level of all characters have been set to {inputGrade}");
-                            JsonDb.Save();
+                            var rsp = AdminCommands.SetCoreLevel(user, inputGrade);
+                            if (!rsp.ok) Console.WriteLine(rsp.error);
                         }
                         else
                         {
@@ -514,9 +389,6 @@ namespace EpinelPS
                     JsonDb.Save();
 
                 }
-
-
-
                 else if (input == "sickpulls")
                 {
                     if (selectedUser == 0)
@@ -569,12 +441,8 @@ namespace EpinelPS
                         }
                         else if (args.Length == 2 && int.TryParse(args[1], out int level) && level >= 1 && level <= 999)
                         {
-                            foreach (var character in user.Characters)
-                            {
-                                character.Level = level;
-                            }
-                            Console.WriteLine("Set all characters' level to " + level);
-                            JsonDb.Save();
+                            var rsp = AdminCommands.SetCharacterLevel(user, level);
+                            if (!rsp.ok) Console.WriteLine(rsp.error);
                         }
                         else
                         {
@@ -625,14 +493,8 @@ namespace EpinelPS
                         }
                         else if (args.Length == 2 && int.TryParse(args[1], out int skillLevel) && skillLevel >= 1 && skillLevel <= 10)
                         {
-                            foreach (var character in user.Characters)
-                            {
-                                character.UltimateLevel = skillLevel;
-                                character.Skill1Lvl = skillLevel;
-                                character.Skill2Lvl = skillLevel;
-                            }
-                            Console.WriteLine("Set all characters' skill levels to " + skillLevel);
-                            JsonDb.Save();
+                            var rsp = AdminCommands.SetSkillLevel(user, skillLevel);
+                            if (!rsp.ok) Console.WriteLine(rsp.error);
                         }
                         else
                         {
@@ -683,93 +545,15 @@ namespace EpinelPS
                     }
                     else
                     {
-                        var user = JsonDb.Instance.Users.FirstOrDefault(x => x.ID == selectedUser);
-                        if (user == null)
+                        if (args.Length == 2)
                         {
-                            Console.WriteLine("Selected user does not exist");
-                            selectedUser = 0;
-                            prompt = "# ";
+                            var input2 = args[1];
+                            var rsp = AdminCommands.CompleteStage(selectedUser, input2);
+                            if (!rsp.ok) Console.WriteLine(rsp.error);
                         }
                         else
                         {
-                            if (args.Length == 2)
-                            {
-                                var input2 = args[1];
-                                try
-                                {
-                                    var chapterParsed = int.TryParse(input2.Split('-')[0], out int chapterNumber);
-                                    var stageParsed = int.TryParse(input2.Split('-')[1], out int stageNumber);
-
-                                    if (chapterParsed && stageParsed)
-                                    {
-                                        Console.WriteLine($"Chapter number: {chapterNumber}, Stage number: {stageNumber}");
-
-                                        // Complete main stages
-                                        for (int i = 0; i <= chapterNumber; i++)
-                                        {
-                                            var stages = GameData.Instance.GetStageIdsForChapter(i, true);
-                                            int target = 1;
-                                            foreach (var item in stages)
-                                            {
-                                                if (!user.IsStageCompleted(item, true))
-                                                {
-                                                    Console.WriteLine("Completing stage " + item);
-                                                    ClearStage.CompleteStage(user, item, true);
-                                                }
-
-                                                if (i == chapterNumber && target == stageNumber)
-                                                {
-                                                    break;
-                                                }
-
-                                                target++;
-                                            }
-                                        }
-
-                                        // Process scenario and regular stages
-                                        Console.WriteLine($"Processing stages for chapters 0 to {chapterNumber}");
-
-                                        for (int chapter = 0; chapter <= chapterNumber; chapter++)
-                                        {
-                                            Console.WriteLine($"Processing chapter: {chapter}");
-
-                                            var stages = GameData.Instance.GetScenarioStageIdsForChapter(chapter)
-                                                .Where(stageId => GameData.Instance.IsValidScenarioStage(stageId, chapterNumber, stageNumber))
-                                                .ToList();
-
-                                            Console.WriteLine($"Found {stages.Count} stages for chapter {chapter}");
-
-                                            foreach (var stage in stages)
-                                            {
-                                                if (!user.CompletedScenarios.Contains(stage))
-                                                {
-                                                    user.CompletedScenarios.Add(stage);
-                                                    Console.WriteLine($"Added stage {stage} to CompletedScenarios");
-                                                }
-                                                else
-                                                {
-                                                    Console.WriteLine($"Stage {stage} is already completed");
-                                                }
-                                            }
-                                        }
-
-                                        // Save changes to user data
-                                        JsonDb.Save();
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("Chapter and stage number must be valid integers");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine("Exception: " + ex.ToString());
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("Invalid argument length, must be 1");
-                            }
+                            Console.WriteLine("Invalid argument length, must be 1");
                         }
                     }
                 }
@@ -794,31 +578,8 @@ namespace EpinelPS
                             {
                                 if (int.TryParse(args[1], out int itemId) && int.TryParse(args[2], out int amount))
                                 {
-                                    ItemData? item = user.Items.FirstOrDefault(i => i.ItemType == itemId);
-
-                                    if (item == null)
-                                    {
-                                        user.Items.Add(new ItemData
-                                        {
-                                            Isn = user.GenerateUniqueItemId(),
-                                            ItemType = itemId,
-                                            Level = 1,
-                                            Exp = 1,
-                                            Count = amount
-                                        });
-                                    }
-                                    else
-                                    {
-                                        item.Count += amount;
-
-                                        if (item.Count < 0)
-                                        {
-                                            item.Count = 0;
-                                        }
-                                    }
-
-                                    Console.WriteLine($"Added {amount} of item {itemId} to user {user.Username}");
-                                    JsonDb.Save();
+                                    var rsp = AdminCommands.AddItem(user, itemId, amount);
+                                    if (!rsp.ok) Console.WriteLine(rsp.error);
                                 }
                                 else
                                 {
@@ -853,27 +614,8 @@ namespace EpinelPS
                             {
                                 if (int.TryParse(args[1], out int characterId))
                                 {
-                                    if (!user.HasCharacter(characterId))
-                                    {
-                                        user.Characters.Add(new Database.Character()
-                                        {
-                                            CostumeId = 0,
-                                            Csn = user.GenerateUniqueCharacterId(),
-                                            Grade = 0,
-                                            Level = 1,
-                                            Skill1Lvl = 1,
-                                            Skill2Lvl = 1,
-                                            Tid = characterId,
-                                            UltimateLevel = 1
-                                        });
-
-                                        Console.WriteLine($"Added character {characterId} to user {user.Username}");
-                                        JsonDb.Save();
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine($"User {user.Username} already has character {characterId}");
-                                    }
+                                    var rsp = AdminCommands.AddCharacter(user, characterId);
+                                    if (!rsp.ok) Console.WriteLine(rsp.error);
                                 }
                                 else
                                 {
@@ -890,14 +632,6 @@ namespace EpinelPS
                 else if (input == "exit")
                 {
                     Environment.Exit(0);
-                }
-                else if (input == "ban")
-                {
-                    Console.WriteLine("Not implemented");
-                }
-                else if (input == "unban")
-                {
-                    Console.WriteLine("Not implemented");
                 }
                 else if (input == "r")
                 {
@@ -967,7 +701,7 @@ namespace EpinelPS
                         response.AddRange([.. ResponseWithBytes]);
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     List<byte> ResponseWithBytes =
    [                   .. Encoding.UTF8.GetBytes("HTTP/1.1 500 Internal Server Error\r\n"),
@@ -1062,7 +796,7 @@ namespace EpinelPS
             url = url.Replace("/v1", "");
 
             // find appropriate handler
-            Console.WriteLine("BATCH: /v1" + url);
+            Logging.WriteLine("BATCH " + url, LogType.Info);
 
             foreach (var item in LobbyHandler.Handlers)
             {
@@ -1075,10 +809,8 @@ namespace EpinelPS
                 }
             }
 
-            var fg = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("HANDLER NOT FOUND: " + url);
-            Console.ForegroundColor = fg;
+            Logging.WriteLine("Handler not found: " + url, LogType.Error);
+
             return null;
         }
     }

@@ -1,5 +1,5 @@
 ﻿using EpinelPS.Database;
-using EpinelPS.StaticInfo;
+using EpinelPS.Data;
 using EpinelPS.Utils;
 
 namespace EpinelPS.LobbyServer.Stage
@@ -92,11 +92,13 @@ namespace EpinelPS.LobbyServer.Stage
             {
                 if (clearedStage.chapter_mod == "Hard")
                 {
-                    user.LastHardStageCleared = StageId;
+                    if (StageId > user.LastHardStageCleared)
+                        user.LastHardStageCleared = StageId;
                 }
                 else if (clearedStage.chapter_mod == "Normal")
                 {
-                    user.LastNormalStageCleared = StageId;
+                    if (StageId > user.LastNormalStageCleared)
+                        user.LastNormalStageCleared = StageId;
                 }
                 else
                 {
@@ -191,6 +193,7 @@ namespace EpinelPS.LobbyServer.Stage
                 user.AddTrigger(TriggerType.ObtainCharacter, 1, 1015);
                 user.AddTrigger(TriggerType.ObtainCharacter, 1, 1014);
                 user.AddTrigger(TriggerType.ObtainCharacter, 1, 3005);
+                user.AddTrigger(TriggerType.ObtainCharacterNew, 1);
 
                 NetTeamData team1Sub = new()
                 {

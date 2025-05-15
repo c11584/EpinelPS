@@ -1,5 +1,5 @@
 ﻿using EpinelPS.Database;
-using EpinelPS.StaticInfo;
+using EpinelPS.Data;
 using EpinelPS.Utils;
 
 namespace EpinelPS.LobbyServer.Character
@@ -20,12 +20,12 @@ namespace EpinelPS.LobbyServer.Character
                 {
                     if (item.Level == 1)
                     {
-                        Console.WriteLine("Character level is already 1 - cannot reset");
+                        Logging.WriteLine("Character level is already 1 - cannot reset", LogType.WarningAntiCheat);
                         return;
                     }
                     if (item.Level == 200)
                     {
-                        Console.WriteLine("Character level is 200 - cannot reset");
+                        Logging.WriteLine("Character level is 200 - cannot reset", LogType.WarningAntiCheat);
                         return;
                     }
 

@@ -12,20 +12,22 @@
 		<NoWarn>$(NoWarn);SYSLIB0057</NoWarn>
 		<Version>0.1.4.2</Version>
 		<CETCompat>false</CETCompat>
+		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="ASodium" Version="0.6.1" />
 		<PackageReference Include="DnsClient" Version="1.8.0" />
 		<PackageReference Include="Google.Api.CommonProtos" Version="2.16.0" />
-		<PackageReference Include="Google.Protobuf.Tools" Version="3.29.1" />
-		<PackageReference Include="Grpc.AspNetCore" Version="2.67.0" />
+		<PackageReference Include="Google.Protobuf.Tools" Version="3.30.2" />
+		<PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
 		<PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="6.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="Paseto.Core" Version="1.3.0" />
+		<PackageReference Include="Paseto.Core" Version="1.4.1" />
 		<PackageReference Include="PeterO.Cbor" Version="4.5.5" />
 		<PackageReference Include="SharpZipLib" Version="1.4.2" />
-		<PackageReference Include="Sodium.Core" Version="1.3.5" />
+		<PackageReference Include="Sodium.Core" Version="1.4.0" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -41,9 +43,7 @@
 	  <None Include="wwwroot\admin\assets\login.css" />
 	  <None Include="wwwroot\admin\assets\login.jpg" />
 	  <None Include="wwwroot\admin\assets\style.css" />
-	  <None Include="wwwroot\admin\dashbrd.html" />
 	  <None Include="wwwroot\admin\index.html" />
-	  <None Include="wwwroot\admin\nav.html" />
 	  <None Include="wwwroot\nikke_launcher\index.html" />
 	</ItemGroup>
 
@@ -60,5 +60,9 @@
 	  <None Update="wwwroot\**\*">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\EpinelPS.Analyzers\EpinelPS.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
 	</ItemGroup>
 </Project>

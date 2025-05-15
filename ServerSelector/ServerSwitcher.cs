@@ -7,9 +7,9 @@ namespace ServerSelector
 {
     public class ServerSwitcher
     {
-        private static string[] GameAssemblySodiumIntegrityFuncHint = ["40 53 56 57 41 54 41 55 41 56 41 57 48 81 EC C0 00 00 00 80 3d ?? ?? ?? ?? 00 0f 85 ?? 00 00 00 48"];
-        public static bool GameAssemblyNeedsPatch = true; // Set to false if running on versions before v124
-        private static string[] GameAssemblySodiumIntegrityFuncPatch = ["b0 01 c3 90 90"];
+        private static readonly string[] GameAssemblySodiumIntegrityFuncHint = ["40 53 56 57 41 54 41 55 41 56 41 57 48 81 EC C0 00 00 00 80 3d ?? ?? ?? ?? 00 0f 85 ?? 00 00 00 48"];
+        private const bool GameAssemblyNeedsPatch = true; // Set to false if running on versions before v124
+        private static readonly string[] GameAssemblySodiumIntegrityFuncPatch = ["b0 01 c3 90 90"];
         private const string HostsStartMarker = "# begin ServerSelector entries";
         private const string HostsEndMarker = "# end ServerSelector entries";
 
@@ -60,6 +60,8 @@ namespace ServerSelector
 
             string launcherCertList = launcherPath + "/intl_service/cacert.pem";
             string gameCertList = gamePath + "/nikke_Data/Plugins/x86_64/intl_cacert.pem";
+            if (!File.Exists(gameCertList))
+                gameCertList = gamePath + "/nikke_Data/Plugins/x86_64/cacert.pem"; // older INTL sdk versions
 
             if (File.Exists(launcherCertList))
             {
@@ -144,7 +146,7 @@ namespace ServerSelector
             {
                 return PatchUtility.SearchAndReplace(dll, GameAssemblySodiumIntegrityFuncHint, GameAssemblySodiumIntegrityFuncPatch);
             }
-            else if (backupExists)
+            else if (backupExists && !PatchUtility.CanFindOffset(dll, GameAssemblySodiumIntegrityFuncHint))
             {
                 File.Move(dll + ".bak", dll, true);
             }
@@ -163,6 +165,8 @@ namespace ServerSelector
 
             string launcherCertList = launcherPath + "/intl_service/cacert.pem";
             string gameCertList = gamePath + "/nikke_Data/Plugins/x86_64/intl_cacert.pem";
+            if (!File.Exists(gameCertList))
+                gameCertList = gamePath + "/nikke_Data/Plugins/x86_64/cacert.pem"; // older INTL sdk versions
             bool supported = true;
 
             if (OperatingSystem.IsLinux())
@@ -206,7 +210,7 @@ namespace ServerSelector
 
                 if (!PatchGameAssembly(gameAssembly, false))
                 {
-                    throw new Exception("Failed to restore GameAssembly.dll. Please repair the game in the launcher.");
+                    supported = false;
                 }
 
                 if (File.Exists(launcherCertList))
