@@ -8,6 +8,10 @@ namespace EpinelPS.Utils
         public string ResourceBaseURL { get; set; } = "";
         public string GameMinVer { get; set; } = "";
         public string GameMaxVer { get; set; } = "";
+        /// <summary>
+        /// this is only for displaying the target version in admin console or cli
+        /// </summary>
+        public string TargetVersion { get; set; }
     }
 
     public class StaticData
@@ -54,6 +58,14 @@ namespace EpinelPS.Utils
                 }
 
                 return _root;
+            }
+        }
+
+        internal static void Save()
+        {
+            if (Root != null)
+            {
+                File.WriteAllText(AppDomain.CurrentDomain.BaseDirectory + "/gameconfig.json", JsonConvert.SerializeObject(Root, Formatting.Indented));
             }
         }
     }

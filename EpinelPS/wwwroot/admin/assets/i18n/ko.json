@@ -1,8 +1,8 @@
 {
   "app": {
-    "name": "NIKKE 관리 콘솔",
-    "version": "버전 v2.5.3",
-    "footer": "© 2025 - NIKKE: 승리의 여신 - 관리 콘솔"
+    "name": "EpinelPS 관리 콘솔",
+    "version": "버전 v1.0.0",
+    "footer": "© 2025 EpinelPS"
   },
   "auth": {
     "login": "로그인",
@@ -204,7 +204,9 @@
   "config": {
     "server": {
       "title": "서버 구성",
-      "logLevel": "로그 레벨:"
+      "logLevel": "로그 레벨:",
+      "updateResources": "리소스 업데이트",
+      "updateResourcesHint": "공식 서버에서 자산 및 정적 데이터 정보를 다운로드합니다."
     },
     "database": {
       "title": "데이터베이스 구성",

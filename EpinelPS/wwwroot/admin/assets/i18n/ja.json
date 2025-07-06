@@ -1,8 +1,8 @@
 {
   "app": {
-    "name": "NIKKEアドミンコンソール",
-    "version": "バージョン v2.5.3",
-    "footer": "© 2025 - NIKKE: 勝利の女神 - アドミンコンソール"
+    "name": "EpinelPSアドミンコンソール",
+    "version": "バージョン v1.0.0",
+    "footer": "© 2025 EpinelPS"
   },
   "auth": {
     "login": "ログイン",
@@ -204,7 +204,9 @@
   "config": {
     "server": {
       "title": "サーバー設定",
-      "logLevel": "ログレベル:"
+      "logLevel": "ログレベル:",
+      "updateResources": "リソースを更新する",
+      "updateResourcesHint": "公式サーバーからアセットと静的データ情報をダウンロードします。"
     },
     "database": {
       "title": "データベース設定",

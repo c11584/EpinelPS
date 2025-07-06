@@ -1,7 +1,8 @@
-﻿using EpinelPS.Database;
-using EpinelPS.Data;
-using Google.Protobuf.WellKnownTypes;
+﻿using System.Collections;
 using System.Collections.Generic;
+using EpinelPS.Data;
+using EpinelPS.Database;
+using Google.Protobuf.WellKnownTypes;
 using static Google.Rpc.Context.AttributeContext.Types;
 
 namespace EpinelPS.Utils
@@ -37,11 +38,27 @@ namespace EpinelPS.Utils
                 Csn = item.Csn,
                 Exp = item.Exp,
                 Isn = item.Isn,
-                Level = item.Level,
+                Lv = item.Level,
                 Position = item.Position,
                 Tid = item.ItemType
             };
         }
+
+        internal static NetUserItemData UserItemDataToNet(ItemData item)
+        {
+            return new NetUserItemData()
+            {
+                Count = item.Count,
+                Tid = item.ItemType,
+                Csn = item.Csn,
+                Lv = item.Level,
+                Exp = item.Exp,
+                Corporation = item.Corp,
+                Isn = item.Isn,
+                Position = item.Position
+            };
+        }
+
 
         public static List<NetUserItemData> GetUserItems(User user)
         {
@@ -58,13 +75,12 @@ namespace EpinelPS.Utils
                     }
                     else
                     {
-                        itemDictionary[item.ItemType] = new NetUserItemData() { Count = item.Count, Tid = item.ItemType, Csn = item.Csn, Level = item.Level, Exp = item.Exp, Corporation = item.Corp, Isn = item.Isn, Position = item.Position };
+                        itemDictionary[item.ItemType] = UserItemDataToNet(item);
                     }
                 }
                 else
                 {
-                    var newItem = new NetUserItemData() { Count = item.Count, Tid = item.ItemType, Csn = item.Csn, Level = item.Level, Exp = item.Exp, Corporation = item.Corp, Isn = item.Isn, Position = item.Position };
-                    itemDictionary[item.ItemType] = newItem;
+                    itemDictionary[item.ItemType] = UserItemDataToNet(item);
                 }
             }
 
@@ -269,7 +285,7 @@ namespace EpinelPS.Utils
             };
             foreach (var item in user.OutpostBuffs.CreditPercentages)
             {
-                goldBuff.Buffs.Add(new NetTimeRewardBuff() { Tid = 22401, FunctionType = 2, SourceType = OutpostBuffSourceType.OutpostBuffSourceTypeTacticAcademy, Value = item });
+                goldBuff.Buffs.Add(new NetTimeRewardBuff() { Tid = 22401, FunctionType = 2, SourceType = OutpostBuffSourceType.TacticAcademy, Value = item });
             }
 
 
@@ -281,7 +297,7 @@ namespace EpinelPS.Utils
             };
             foreach (var item in user.OutpostBuffs.BattleDataPercentages)
             {
-                battleDataBuff.Buffs.Add(new NetTimeRewardBuff() { Tid = 22401, FunctionType = 2, SourceType = OutpostBuffSourceType.OutpostBuffSourceTypeTacticAcademy, Value = item });
+                battleDataBuff.Buffs.Add(new NetTimeRewardBuff() { Tid = 22401, FunctionType = 2, SourceType = OutpostBuffSourceType.TacticAcademy, Value = item });
             }
 
             var xpBuff = new NetTimeReward()
@@ -292,7 +308,7 @@ namespace EpinelPS.Utils
             };
             foreach (var item in user.OutpostBuffs.UserExpPercentages)
             {
-                xpBuff.Buffs.Add(new NetTimeRewardBuff() { Tid = 22401, FunctionType = 2, SourceType = OutpostBuffSourceType.OutpostBuffSourceTypeTacticAcademy, Value = item });
+                xpBuff.Buffs.Add(new NetTimeRewardBuff() { Tid = 22401, FunctionType = 2, SourceType = OutpostBuffSourceType.TacticAcademy, Value = item });
             }
 
             var coredustBuff = new NetTimeReward()
@@ -303,7 +319,7 @@ namespace EpinelPS.Utils
             };
             foreach (var item in user.OutpostBuffs.CoreDustPercentages)
             {
-                coredustBuff.Buffs.Add(new NetTimeRewardBuff() { Tid = 22401, FunctionType = 2, SourceType = OutpostBuffSourceType.OutpostBuffSourceTypeTacticAcademy, Value = item });
+                coredustBuff.Buffs.Add(new NetTimeRewardBuff() { Tid = 22401, FunctionType = 2, SourceType = OutpostBuffSourceType.TacticAcademy, Value = item });
             }
 
             res.Add(battleDataBuff);
@@ -312,6 +328,79 @@ namespace EpinelPS.Utils
             res.Add(coredustBuff);
 
             return res;
+        }
+
+        private static NetWholeTeamSlot? LookupCharacter(User user, long csn, int slot)
+        {
+            if (csn == 0) return new() { Slot = slot };
+
+            var result = new NetWholeTeamSlot();
+
+            var c = user.GetCharacterBySerialNumber(csn);
+            if (c == null) return new() { Slot = slot };
+
+            return new NetWholeTeamSlot()
+            {
+                CostumeId = c.CostumeId,
+                Csn = csn,
+                Lv = c.Level,
+                Slot = slot,
+                Tid = c.Tid,
+                //UserFavoriteItem: TODO
+            };
+        }
+
+        internal static NetWholeUserTeamData GetDisplayedTeam(User user)
+        {
+            NetWholeUserTeamData result = new() { TeamNumber = 1, Type = 2 };
+
+            result.Slots.Add(LookupCharacter(user, user.RepresentationTeamDataNew[0], 1));
+            result.Slots.Add(LookupCharacter(user, user.RepresentationTeamDataNew[1], 2));
+            result.Slots.Add(LookupCharacter(user, user.RepresentationTeamDataNew[2], 3));
+            result.Slots.Add(LookupCharacter(user, user.RepresentationTeamDataNew[3], 4));
+            result.Slots.Add(LookupCharacter(user, user.RepresentationTeamDataNew[4], 5));
+
+            int totalCP = 0;
+
+            foreach (var item in user.RepresentationTeamDataNew)
+            {
+                totalCP += FormulaUtils.CalculateCP(user, item);
+            }
+
+            result.TeamCombat = totalCP;
+
+            return result;
+        }
+
+        public static NetRewardData UseLootBox(User user, int boxId, int count)
+        {
+            ItemConsumeRecord? cItem = GameData.Instance.ConsumableItems.Where(x => x.Value.id == boxId).FirstOrDefault().Value ?? throw new Exception("cannot find box id " + boxId);
+
+            if (cItem.use_type != "ItemRandomBox") throw new Exception("expected random box");
+
+            // find matching probability entries
+            var probabilityEntries = GameData.Instance.RandomItem.Values.Where(x => x.group_id == cItem.use_id).ToArray();
+            if (!probabilityEntries.Any()) throw new Exception($"cannot find any probability entries with ID {cItem.use_id}, box ID: {cItem.id}");
+
+            // run probability as many times as needed
+            NetRewardData ret = new() { PassPoint = new() };
+            for (int i = 0; i < count; i++)
+            {
+                var winningRecord = Rng.PickWeightedItem(probabilityEntries);
+
+                if (winningRecord.reward_value_min  != winningRecord.reward_value_max)
+                {
+                    Logging.WriteLine("TODO: reward_value_max", LogType.Warning);
+                }
+
+                if (winningRecord.reward_type == "Currency")
+                    RewardUtils.AddSingleCurrencyObject(user, ref ret, (CurrencyType)winningRecord.reward_id, winningRecord.reward_value_min);
+                else
+                    RewardUtils.AddSingleObject(user, ref ret, winningRecord.reward_id, winningRecord.reward_type, winningRecord.reward_value_min);
+            }
+            JsonDb.Save();
+
+            return ret;
         }
     }
 }

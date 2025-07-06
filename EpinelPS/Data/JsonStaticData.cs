@@ -137,7 +137,7 @@
         public int piece_id;
         public string original_rare = "";
         public string corporation = "";
-		public string corporation_sub_type = "";
+        public string corporation_sub_type = "";
         public int grade_core_id;
         public int name_code;
         public int grow_grade;
@@ -301,6 +301,30 @@
     public class GachaTypeTable
     {
         public List<GachaType> records = [];
+    }
+
+    public class GachaGradeProbRecord
+    {
+        public int id;
+        public int group_id;
+        public string rare = "";
+        public int prob;
+        public int gacha_list_id;
+    }
+    public class GachaGradeProbTable
+    {
+        public List<GachaGradeProbRecord> records = [];
+    }
+
+    public class GachaListProbRecord
+    {
+        public int id;
+        public int group_id;
+        public int gacha_id;
+    }
+    public class GachaListProbTable
+    {
+        public List<GachaListProbRecord> records = [];
     }
 
     public class EventManager
@@ -599,7 +623,7 @@
     }
     public class TowerTable
     {
-        public List<TowerRecord> records = []; 
+        public List<TowerRecord> records = [];
     }
 
     public class ItemEquipExpRecord
@@ -759,5 +783,167 @@
     public class ScenarioRewardTable
     {
         public List<ScenarioRewardRecord> records = [];
+    }
+
+    public class ProductOfferRecord
+    {
+        public int id;
+    }
+    public class ProductOfferTable
+    {
+        public List<ProductOfferRecord> records = [];
+    }
+    public class InterceptionRecord
+    {
+        public int id;
+        public int group;
+        public int condition_reward_group;
+        public int percent_condition_reward_group;
+        public long fixed_damage;
+    }
+    public class InterceptionTable
+    {
+        public List<InterceptionRecord> records = [];
+    }
+    public class ConditionRewardRecord
+    {
+        public int id;
+        public int group;
+        public int priority;
+        public long value_min;
+        public long value_max;
+        public int reward_id;
+    }
+    public class ConditionRewardTable
+    {
+        public List<ConditionRewardRecord> records = [];
+    }
+    public enum ItemSubType
+    {
+        BundleBox,
+        ItemRandomBoxList,
+        ItemRandomBoxNormal,
+        TimeReward,
+        Box,
+        ProfileRandomBox,
+        ArcadeItem,
+        EquipCombination
+    }
+    public class ItemConsumeRecord
+    {
+        public int id;
+        public string use_type = "";
+        public string item_type = "";
+        public ItemSubType item_sub_type;
+        public int use_id;
+        public int use_value;
+    }
+    public class ItemConsumeTable
+    {
+        public List<ItemConsumeRecord> records = [];
+    }
+    public class ItemPieceRecord
+    {
+        public int id;
+        public string use_type = "";
+        public int use_id;
+        public int use_value;
+    }
+    public class  ItemPieceTable
+    {
+        public List<ItemPieceRecord> records = [];
+    }
+    public class RandomItemRecord
+    {
+        public int id;
+        public int group_id;
+        public string reward_type = "";
+        public int reward_id;
+        public int reward_value_min;
+        public int reward_value_max;
+        public int ratio;
+    }
+    public class RandomItemTable
+    {
+        public List<RandomItemRecord> records = [];
+    }
+    public class RecycleResearchStatRecord
+    {
+        public int id;
+        public string recycle_type = "";
+        public int unlock_condition_id;
+        public int unlock_level;
+        public int attack;
+        public int defense;
+        public int hp;
+    }
+    public class RecycleResearchStatTable
+    {
+        public List<RecycleResearchStatRecord> records = [];
+    }
+    public class RecycleResearchLevelRecord
+    {
+        public int id;
+        public string recycle_type = "";
+        public int recycle_level;
+        public int exp;
+        public int item_id;
+        public int item_value;
+    }
+    public class RecycleResearchLevelTable
+    {
+        public List<RecycleResearchLevelRecord> records = [];
+    }
+    public enum ContentOpenType
+    {
+        Stage,
+        NonUpdate
+    }
+    public class LostSectorRecord
+    {
+        public int id;
+        public int sector;
+        public int exploration_reward;
+        public string field_id;
+        public int sector_clear_condition;
+        public ContentOpenType open_condition_type;
+        public int open_condition_value;
+
+    }
+    public class LostSectorTable
+    {
+        public List<LostSectorRecord> records = [];
+    }
+    public class LostSectorStageRecord
+    {
+        public int id;
+        public bool is_use_quick_battle;
+        public int sector;
+    }
+    public class LostSectorStageTable
+    {
+        public List<LostSectorStageRecord> records = [];
+    }
+
+    public class ItemSpawner
+    {
+        public string positionId = "";
+        public int itemId;
+        public bool isCompleteReward;
+    }
+    public class StageSpawner
+    {
+        public string positionId = "";
+        public int stageId;
+    }
+    public class MapInfo
+    {
+        public string id { get; set; } = "";
+        public List<ItemSpawner> ItemSpawner { get; set; } = [];
+        public List<StageSpawner> StageSpawner { get; set; } = [];
+    }
+    public class MapInfoTable
+    {
+        public List<MapInfo> records = [];
     }
 }

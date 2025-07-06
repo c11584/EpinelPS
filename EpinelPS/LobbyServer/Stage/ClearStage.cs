@@ -31,14 +31,15 @@ namespace EpinelPS.LobbyServer.Stage
             var response = new ResClearStage();
             var clearedStage = GameData.Instance.GetStageData(StageId) ?? throw new Exception("cleared stage cannot be null");
 
+            var stageMapId = GameData.Instance.GetMapIdFromChapter(clearedStage.chapter_id, clearedStage.chapter_mod);
+            
             if (user.FieldInfoNew.Count == 0)
             {
-                user.FieldInfoNew.Add("0_" + clearedStage.chapter_mod, new FieldInfoNew() { });
+                user.FieldInfoNew.Add(stageMapId, new FieldInfoNew() { });
             }
 
             DoQuestSpecificUserOperations(user, StageId);
             var rewardData = GameData.Instance.GetRewardTableEntry(clearedStage.reward_id);
-
 
             if (forceCompleteScenarios)
             {
@@ -144,13 +145,10 @@ namespace EpinelPS.LobbyServer.Stage
                     user.AddTrigger(TriggerType.ChapterClear, 1, clearedStage.chapter_id);
             }
 
-            // CreateClearInfo(user);
+            if (!user.FieldInfoNew.ContainsKey(stageMapId))
+                user.FieldInfoNew.Add(stageMapId, new FieldInfoNew());
 
-            var key = (clearedStage.chapter_id - 1) + "_" + clearedStage.chapter_mod;
-            if (!user.FieldInfoNew.ContainsKey(key))
-                user.FieldInfoNew.Add(key, new FieldInfoNew());
-
-            user.FieldInfoNew[key].CompletedStages.Add(StageId);
+            user.FieldInfoNew[stageMapId].CompletedStages.Add(StageId);
             JsonDb.Save();
             return response;
         }
@@ -185,8 +183,8 @@ namespace EpinelPS.LobbyServer.Stage
                 user.Characters.Add(new Database.Character() { Csn = 47263458, Tid = 230101 });
                 user.Characters.Add(new Database.Character() { Csn = 47263459, Tid = 301201 });
 
-                user.BondInfo.Add(new() { NameCode = 3001, Level = 1 });
-                user.BondInfo.Add(new() { NameCode = 3005, Level = 1 });
+                user.BondInfo.Add(new() { NameCode = 3001, Lv = 1 });
+                user.BondInfo.Add(new() { NameCode = 3005, Lv = 1 });
                 
                 user.AddTrigger(TriggerType.ObtainCharacter, 1, 3001);
                 user.AddTrigger(TriggerType.ObtainCharacter, 1, 1018);
@@ -208,47 +206,15 @@ namespace EpinelPS.LobbyServer.Stage
                 team1.Teams.Add(team1Sub);
                 user.UserTeams.Add(1, team1);
 
-                user.RepresentationTeamData.TeamNumber = 1;
-                user.RepresentationTeamData.Slots.Clear();
-                user.RepresentationTeamData.Slots.Add(new NetWholeTeamSlot { Slot = 1, Csn = 47263455, Tid = 201001, Level = 1 });
-                user.RepresentationTeamData.Slots.Add(new NetWholeTeamSlot { Slot = 2, Csn = 47273456, Tid = 330501, Level = 1 });
-                user.RepresentationTeamData.Slots.Add(new NetWholeTeamSlot { Slot = 3, Csn = 47263457, Tid = 130201, Level = 1 });
-                user.RepresentationTeamData.Slots.Add(new NetWholeTeamSlot { Slot = 4, Csn = 47263458, Tid = 230101, Level = 1 });
-                user.RepresentationTeamData.Slots.Add(new NetWholeTeamSlot { Slot = 5, Csn = 47263459, Tid = 301201, Level = 1 });
-
-                int totalCP = 0;
-
-                foreach (var item in user.RepresentationTeamData.Slots)
-                {
-                    totalCP += FormulaUtils.CalculateCP(user, item.Csn);
-                }
-
-                user.RepresentationTeamData.TeamCombat = totalCP;
+                user.RepresentationTeamDataNew =
+                [
+                    47263455,
+                    47273456,
+                    47263457,
+                    47263458,
+                    47263459
+                ];
             }
-        }
-
-        private static void CreateClearInfo(Database.User user)
-        {
-            NetStageClearInfo clearInfo = new NetStageClearInfo
-            {
-                User = LobbyHandler.CreateWholeUserDataFromDbUser(user),
-                TeamCombat = user.RepresentationTeamData.TeamCombat,
-                ClearedAt = DateTimeOffset.UtcNow.Ticks
-            };
-
-            foreach (var character in user.RepresentationTeamData.Slots)
-            {
-                clearInfo.Slots.Add(new NetStageClearInfoTeam()
-                {
-                    Slot = character.Slot,
-                    Tid = character.Tid,
-                    Level = character.Level,
-                    Combat = FormulaUtils.CalculateCP(user, character.Csn),
-                    CharacterType = StageClearInfoTeamCharacterType.StageClearInfoTeamCharacterTypeOwnedCharacter // TODO: how do we get this?
-                });
-            }
-
-            user.StageClearHistorys.Add(clearInfo);
         }
     }
 }

@@ -1,9 +1,10 @@
-﻿using EpinelPS.Data;
+﻿using System.Globalization;
+using EpinelPS.Data;
 using EpinelPS.Utils;
-using Newtonsoft.Json;
-using Paseto.Builder;
-using Paseto;
 using Google.Protobuf;
+using Newtonsoft.Json;
+using Paseto;
+using Paseto.Builder;
 
 namespace EpinelPS.Database
 {
@@ -81,6 +82,14 @@ namespace EpinelPS.Database
         /// Time when slot cooldown expires
         /// </summary>
         public long AvailableAt;
+    }
+    public class RecycleRoomResearchProgress
+    {
+        public int Level = 1;
+        public int Exp;
+        public int Attack;
+        public int Defense;
+        public int Hp;
     }
     public class SimroomData
     {
@@ -219,6 +228,18 @@ namespace EpinelPS.Database
         public string Id { get; set; } = "";
         public int State { get; set; }
     }
+    public class LostSectorData
+    {
+        public bool IsOpen { get; set; }
+        public bool IsPlaying { get; set; }
+        public string Json { get; set; } = "";
+        public Dictionary<string, NetLostSectorFieldObject> Objects { get; set; } = [];
+        public Dictionary<string, int> ClearedStages { get; set; } = [];
+        public List<NetLostSectorTeamPosition> TeamPositions { get; set; } = [];
+        public int ObtainedRewards { get; set; } = 0;
+        public bool RecievedFinalReward { get; set; }
+        public bool CompletedPerfectly { get; set; }
+    }
     public class User
     {
         // User info
@@ -253,12 +274,13 @@ namespace EpinelPS.Database
         public List<SynchroSlot> SynchroSlots = new List<SynchroSlot>();
         public bool SynchroDeviceUpgraded = false;
         public int SynchroDeviceLevel = 200;
+        public Dictionary<int, RecycleRoomResearchProgress> ResearchProgress = [];
 
         public ResetableData ResetableData = new();
         public WeeklyResetableData WeeklyResetableData = new();
         public List<ItemData> Items = new();
         public List<Character> Characters = [];
-        public NetWholeUserTeamData RepresentationTeamData = new();
+        public long[] RepresentationTeamDataNew = [];
         public Dictionary<int, ClearedTutorialData> ClearedTutorialData = [];
 
         public NetWallpaperData[] WallpaperList = [];
@@ -288,8 +310,8 @@ namespace EpinelPS.Database
 
         public Dictionary<int, int> TowerProgress = new Dictionary<int, int>();
 
-        public JukeBoxSetting LobbyMusic = new() { Location = NetJukeboxLocation.NetJukeboxLocationLobby, TableId = 2, Type = NetJukeboxBgmType.NetJukeboxBgmTypeJukeboxTableId };
-        public JukeBoxSetting CommanderMusic = new() { Location = NetJukeboxLocation.NetJukeboxLocationCommanderRoom, TableId = 5, Type = NetJukeboxBgmType.NetJukeboxBgmTypeJukeboxTableId };
+        public JukeBoxSetting LobbyMusic = new() { Location = NetJukeboxLocation.Lobby, TableId = 2, Type = NetJukeboxBgmType.JukeboxTableId };
+        public JukeBoxSetting CommanderMusic = new() { Location = NetJukeboxLocation.CommanderRoom, TableId = 5, Type = NetJukeboxBgmType.JukeboxTableId };
         public OutpostBuffs OutpostBuffs = new();
         public Dictionary<int, UnlockData> ContentsOpenUnlocked = new();
 
@@ -304,6 +326,7 @@ namespace EpinelPS.Database
         public List<NetMessage> MessengerData = [];
         public ulong LastMessageId = 1;
         public long LastBadgeSeq = 1;
+        public Dictionary<int, LostSectorData> LostSectorData = [];
 
         // Event data
         public Dictionary<int, EventData> EventInfo = new();
@@ -468,7 +491,7 @@ namespace EpinelPS.Database
                 var matchingCharacterIds = GameData.Instance.CharacterTable.Where(kvp => kvp.Value.name_code == targetNameCode).Select(kvp => kvp.Key).ToHashSet();
 
                 // Step 3: Check if any of your owned characters have a 'Tid' in the set of matching IDs
-                return Characters.Where(ownedCharacter => matchingCharacterIds.Contains(ownedCharacter.Tid)).First();
+                return Characters.Where(ownedCharacter => matchingCharacterIds.Contains(ownedCharacter.Tid)).FirstOrDefault();
 
             }
             else
@@ -479,6 +502,7 @@ namespace EpinelPS.Database
 
         public Character? GetCharacterBySerialNumber(long value)
         {
+            if (value == 0) return null;
             return Characters.Where(x => x.Csn == value).FirstOrDefault();
         }
 
@@ -586,10 +610,11 @@ namespace EpinelPS.Database
         public List<AccessToken> LauncherAccessTokens = [];
         public Dictionary<string, ulong> AdminAuthTokens = new();
 
-        public string ServerName = "<color=\"green\">Private Server</color>";
         public byte[] LauncherTokenKey = [];
         public byte[] EncryptionTokenKey = [];
         public LogType LogLevel = LogType.Debug;
+
+        public int MaxInterceptionCount = 3;
     }
     internal class JsonDb
     {
@@ -634,7 +659,7 @@ namespace EpinelPS.Database
                     }
                     Console.WriteLine("Database update completed");
                 }
-                else if (Instance.DbVersion == 1)
+                if (Instance.DbVersion == 1)
                 {
                     Console.WriteLine("Starting database update...");
                     // there was a bug where equipment position was not saved, so remove all items from each characters
@@ -648,7 +673,7 @@ namespace EpinelPS.Database
                     }
                     Console.WriteLine("Database update completed");
                 }
-                else if (Instance.DbVersion == 2)
+                if (Instance.DbVersion == 2)
                 {
                     Console.WriteLine("Starting database update...");
                     // I used to use a class for FieldInfo cleared stages, but now int list is used
@@ -665,6 +690,55 @@ namespace EpinelPS.Database
                             user.FieldInfoNew.Add(f.Key, newField);
                         }
                         user.FieldInfo.Clear();
+                    }
+                    Console.WriteLine("Database update completed");
+                }
+                if (Instance.DbVersion == 3)
+                {
+                    Console.WriteLine("Starting database update...");
+                    Instance.DbVersion = 4;
+                    foreach (var user in Instance.Users)
+                    {
+                        user.RepresentationTeamDataNew = new long[5];
+                    }
+                    Console.WriteLine("Database update completed");
+                }
+                if (Instance.DbVersion == 4)
+                {
+                    Console.WriteLine("Starting database update...");
+                    Instance.DbVersion = 5;
+                    // FieldInfoNew uses MapId instead of ChapterNum_ChapterDifficulty format
+                    foreach (var user in Instance.Users)
+                    {
+                        Dictionary<string, FieldInfoNew> info = new();
+                        foreach (var item in user.FieldInfoNew)
+                        {
+                            if (item.Key.EndsWith("_Normal") || item.Key.EndsWith("_Hard"))
+                            {
+                                var newKey = GameData.Instance.GetMapIdFromDBFieldName(item.Key);
+                                if (newKey != null)
+                                {
+                                    if (!info.ContainsKey(newKey))
+                                    {
+                                        info.Add(newKey, item.Value);
+                                    }
+                                    else
+                                    {
+                                        // overwrite old data
+                                        info[newKey] = item.Value;
+                                    }
+                                }
+                                else
+                                    Console.WriteLine("Unknown chapter/difficulty: " + item.Value + ", discarding");
+                            }
+                            else
+                            {
+                                if (!info.ContainsKey(item.Key))
+                                    info.Add(item.Key, item.Value);
+                            }
+                        }
+
+                        user.FieldInfoNew = info;
                     }
                     Console.WriteLine("Database update completed");
                 }
@@ -688,6 +762,8 @@ namespace EpinelPS.Database
 
                 Save();
 
+                Logging.SetOutputLevel(Instance.LogLevel);
+
                 ValidateDb();
                 Console.WriteLine("JsonDb: Loaded");
             }
@@ -695,6 +771,7 @@ namespace EpinelPS.Database
             {
                 throw new Exception("Failed to read configuration json file");
             }
+
         }
 
         public static void Reload()

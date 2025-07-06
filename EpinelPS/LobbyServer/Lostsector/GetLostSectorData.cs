@@ -1,4 +1,5 @@
-﻿using EpinelPS.Utils;
+﻿using EpinelPS.Data;
+using EpinelPS.Utils;
 
 namespace EpinelPS.LobbyServer.Lostsector
 {
@@ -12,7 +13,30 @@ namespace EpinelPS.LobbyServer.Lostsector
 
             var response = new ResGetLostSectorData();
 
-            // TODO
+            foreach (var item in GameData.Instance.LostSector)
+            {
+                if (item.Value.open_condition_type == ContentOpenType.Stage && user.IsStageCompleted(item.Value.open_condition_value, true))
+                {
+                    response.ClearStages.Add(new NetFieldStageData() { StageId = item.Value.open_condition_value });
+                }
+
+                if (user.LostSectorData.ContainsKey(item.Key))
+                {
+                    var map = GameData.Instance.MapData[item.Value.field_id];
+                    var val = user.LostSectorData[item.Key];
+                    response.LostSector.Add(new NetUserLostSectorData()
+                    {
+                        IsOpen = val.IsOpen,
+                        SectorId = item.Key,
+                        IsPlaying = val.IsPlaying,
+                        CurrentClearStageCount = val.ClearedStages.Count,
+                        RewardCount = val.ObtainedRewards,
+                        IsFinalReward = val.RecievedFinalReward,
+                        IsPerfectReward = val.CompletedPerfectly,
+                        MaxClearStageCount = map.StageSpawner.Count
+                    });
+                }
+            }
 
             await WriteDataAsync(response);
         }

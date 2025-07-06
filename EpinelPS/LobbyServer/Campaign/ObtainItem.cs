@@ -15,20 +15,10 @@ namespace EpinelPS.LobbyServer.Campaign
 
             var response = new ResObtainCampaignItem();
 
-            var chapter = GameData.Instance.GetNormalChapterNumberFromFieldName(req.MapId);
-            var mod = req.MapId.Contains("hard") ? "Hard" : "Normal";
-            var key = chapter + "_" + mod;
-
-            if (chapter == -1)
-            {
-                Logging.WriteLine("Warning: unknown chapter id for " + req.MapId, LogType.Warning);
-                key = req.MapId;
-            }
-
-            if (!user.FieldInfoNew.TryGetValue(key, out FieldInfoNew? field))
+            if (!user.FieldInfoNew.TryGetValue(req.MapId, out FieldInfoNew? field))
             {
                 field = new FieldInfoNew();
-                user.FieldInfoNew.Add(key, field);
+                user.FieldInfoNew.Add(req.MapId, field);
             }
 
 
@@ -43,8 +33,11 @@ namespace EpinelPS.LobbyServer.Campaign
 
             // Register and return reward
 
-            if (!GameData.Instance.PositionReward.TryGetValue(req.FieldObject.PositionId, out int fieldReward)) throw new Exception("bad position id");
-            var positionReward = GameData.Instance.FieldItems[fieldReward];
+            var map = GameData.Instance.MapData[req.MapId];
+
+            var position = map.ItemSpawner.Where(x => x.positionId == req.FieldObject.PositionId).FirstOrDefault() ?? throw new Exception("bad position id");
+
+            var positionReward = GameData.Instance.FieldItems[position.itemId];
             var reward = GameData.Instance.GetRewardTableEntry(positionReward.type_value) ?? throw new Exception("failed to get reward");
             response.Reward = RewardUtils.RegisterRewardsForUser(user, reward);
 
