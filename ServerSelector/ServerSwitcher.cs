@@ -1,4 +1,5 @@
-﻿using System;
+﻿//#define GameAssemblyNeedsPatch // remove if running on versions before v124 or on v137+
+using System;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -8,20 +9,20 @@ namespace ServerSelector
     public class ServerSwitcher
     {
         private static readonly string[] GameAssemblySodiumIntegrityFuncHint = ["40 53 56 57 41 54 41 55 41 56 41 57 48 81 EC C0 00 00 00 80 3d ?? ?? ?? ?? 00 0f 85 ?? 00 00 00 48"];
-        private const bool GameAssemblyNeedsPatch = true; // Set to false if running on versions before v124
+        private static readonly string[] GameAssemblySodiumIntegrityFuncPatched = ["b0 01 c3 90 90 54 41 55 41 56 41 57 48 81 EC C0 00 00 00 80 3d ?? ?? ?? ?? 00 0f 85 ?? 00 00 00 48"];
         private static readonly string[] GameAssemblySodiumIntegrityFuncPatch = ["b0 01 c3 90 90"];
         private const string HostsStartMarker = "# begin ServerSelector entries";
         private const string HostsEndMarker = "# end ServerSelector entries";
 
         public static bool IsUsingOfficalServer()
         {
-            var hostsFile = File.ReadAllText(OperatingSystem.IsWindows() ? "C:\\Windows\\System32\\drivers\\etc\\hosts" : "/etc/hosts");
+            string hostsFile = File.ReadAllText(OperatingSystem.IsWindows() ? "C:\\Windows\\System32\\drivers\\etc\\hosts" : "/etc/hosts");
             return !hostsFile.Contains("global-lobby.nikke-kr.com");
         }
 
         public static bool IsOffline()
         {
-            var hostsFile = File.ReadAllText(OperatingSystem.IsWindows() ? "C:\\Windows\\System32\\drivers\\etc\\hosts" : "/etc/hosts");
+            string hostsFile = File.ReadAllText(OperatingSystem.IsWindows() ? "C:\\Windows\\System32\\drivers\\etc\\hosts" : "/etc/hosts");
             return hostsFile.Contains("cloud.nikke-kr.com");
         }
 
@@ -65,7 +66,7 @@ namespace ServerSelector
 
             if (File.Exists(launcherCertList))
             {
-                var certList1 = await File.ReadAllTextAsync(launcherCertList);
+                string certList1 = await File.ReadAllTextAsync(launcherCertList);
 
                 if (!certList1.Contains("Good SSL Ca"))
                     return "Patch missing";
@@ -73,7 +74,7 @@ namespace ServerSelector
 
             if (File.Exists(gameCertList))
             {
-                var certList2 = await File.ReadAllTextAsync(gameCertList);
+                string certList2 = await File.ReadAllTextAsync(gameCertList);
 
                 if (!certList2.Contains("Good SSL Ca"))
                     return "Patch missing";
@@ -88,7 +89,7 @@ namespace ServerSelector
 
         public static async Task RevertHostsFile(string hostsFilePath)
         {
-            var txt = await File.ReadAllTextAsync(hostsFilePath);
+            string txt = await File.ReadAllTextAsync(hostsFilePath);
 
             // remove stuff
             try
@@ -107,7 +108,7 @@ namespace ServerSelector
                     // old code, find new line character before start index
                     for (int i = startIdx - 1; i >= 0; i--)
                     {
-                        var c = txt[i];
+                        char c = txt[i];
                         if (c == '\n')
                         {
                             startIdx = i + 1;
@@ -139,8 +140,9 @@ namespace ServerSelector
         public static bool PatchGameAssembly(string dll, bool install)
         {
             // v124 introduced check to ensure that sodium dll is not changed.
-            if (!GameAssemblyNeedsPatch) return true;
-
+#if !GameAssemblyNeedsPatch
+            return true;
+#else
             string backupPath = dll + ".bak";
             bool backupExists = File.Exists(backupPath);
 
@@ -166,6 +168,12 @@ namespace ServerSelector
                     File.Delete(backupPath);
                 }
 
+                if (PatchUtility.CanFindOffset(dll, GameAssemblySodiumIntegrityFuncPatched))
+                {
+                    // already patched
+                    return true;
+                }
+
                 // patch assembly
                 return PatchUtility.SearchAndReplace(dll, GameAssemblySodiumIntegrityFuncHint, GameAssemblySodiumIntegrityFuncPatch);
             }
@@ -186,6 +194,7 @@ namespace ServerSelector
             }
 
             return true;
+#endif
         }
 
         public static async Task<ServerSwitchResult> SaveCfg(bool useOffical, string gamePath, string? launcherPath, string ip, bool offlineMode)
@@ -195,7 +204,7 @@ namespace ServerSelector
             string gameAssembly = gamePath + "/GameAssembly.dll";
             string sodiumBackup = gameSodium + ".bak";
             string hostsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "drivers/etc/hosts");
-            var CAcert = await File.ReadAllTextAsync(AppDomain.CurrentDomain.BaseDirectory + "myCA.pem");
+            string CAcert = await File.ReadAllTextAsync(AppDomain.CurrentDomain.BaseDirectory + "myCA.pem");
 
             string launcherCertList = launcherPath + "/intl_service/cacert.pem";
             string gameCertList = gamePath + "/nikke_Data/Plugins/x86_64/intl_cacert.pem";
@@ -249,7 +258,7 @@ namespace ServerSelector
 
                 if (File.Exists(launcherCertList))
                 {
-                    var certList1 = await File.ReadAllTextAsync(launcherCertList);
+                    string certList1 = await File.ReadAllTextAsync(launcherCertList);
 
                     int goodSslIndex1 = certList1.IndexOf("Good SSL Ca");
                     if (goodSslIndex1 != -1)
@@ -258,7 +267,7 @@ namespace ServerSelector
 
                 if (File.Exists(gameCertList))
                 {
-                    var certList2 = await File.ReadAllTextAsync(gameCertList);
+                    string certList2 = await File.ReadAllTextAsync(gameCertList);
 
                     int goodSslIndex2 = certList2.IndexOf("Good SSL Ca");
                     if (goodSslIndex2 != -1)
@@ -353,7 +362,7 @@ namespace ServerSelector
                 }
 
                 // copy backup if sodium size is correct
-                var sod = await File.ReadAllBytesAsync(gameSodium);
+                byte[] sod = await File.ReadAllBytesAsync(gameSodium);
                 if (sod.Length <= 307200)
                 {
                     // orignal file size, copy backup
@@ -370,13 +379,13 @@ namespace ServerSelector
 
                 if (launcherPath != null)
                 {
-                    var certList1 = await File.ReadAllTextAsync(launcherCertList);
+                    string certList1 = await File.ReadAllTextAsync(launcherCertList);
                     certList1 += "\nGood SSL Ca\n===============================\n";
                     certList1 += CAcert;
                     await File.WriteAllTextAsync(launcherCertList, certList1);
                 }
 
-                var certList2 = await File.ReadAllTextAsync(gameCertList);
+                string certList2 = await File.ReadAllTextAsync(gameCertList);
                 certList2 += "\nGood SSL Ca\n===============================\n";
                 certList2 += CAcert;
                 await File.WriteAllTextAsync(gameCertList, certList2);

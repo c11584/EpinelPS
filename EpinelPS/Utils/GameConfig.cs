@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+using EpinelPS.Database;
+using Newtonsoft.Json;
 
 namespace EpinelPS.Utils
 {
@@ -12,7 +13,7 @@ namespace EpinelPS.Utils
         /// <summary>
         /// this is only for displaying the target version in admin console or cli
         /// </summary>
-        public string TargetVersion { get; set; }
+        public string TargetVersion { get; set; } = "";
     }
 
     public class StaticData

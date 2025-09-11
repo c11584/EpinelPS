@@ -8,18 +8,18 @@ namespace EpinelPS.LobbyServer.Lostsector
     {
         protected override async Task HandleAsync()
         {
-            var req = await ReadData<ReqPlayLostSector>();
-            var user = GetUser();
+            ReqPlayLostSector req = await ReadData<ReqPlayLostSector>();
+            User user = GetUser();
 
-            var response = new ResPlayLostSector();
+            ResPlayLostSector response = new();
 
             if (!user.LostSectorData.ContainsKey(req.SectorId))
-                user.LostSectorData.Add(req.SectorId, new Database.LostSectorData()
+                user.LostSectorData.Add(req.SectorId, new LostSectorData()
                 {
                     IsPlaying = true
                 });
 
-            var lostSectorData = user.LostSectorData[req.SectorId];
+            LostSectorData lostSectorData = user.LostSectorData[req.SectorId];
             lostSectorData.IsPlaying = true;
 
             response.Lostsector = new NetUserLostSectorData()

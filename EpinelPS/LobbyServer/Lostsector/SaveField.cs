@@ -7,18 +7,18 @@ namespace EpinelPS.LobbyServer.Lostsector
     {
         protected override async Task HandleAsync()
         {
-            var req = await ReadData<ReqSaveLostSectorField>();
-            var user = GetUser();
+            ReqSaveLostSectorField req = await ReadData<ReqSaveLostSectorField>();
+            User user = GetUser();
 
-            var response = new ResSaveLostSectorField();
+            ResSaveLostSectorField response = new();
 
-            if (!user.LostSectorData.ContainsKey(req.SectorId))
-                user.LostSectorData.Add(req.SectorId, new Database.LostSectorData()
+            if (!user.LostSectorData.TryGetValue(req.SectorId, out LostSectorData? value))
+                user.LostSectorData.Add(req.SectorId, new LostSectorData()
                 {
                     Json = req.Json
                 });
             else
-                user.LostSectorData[req.SectorId].Json = req.Json;
+                value.Json = req.Json;
 
 
             await WriteDataAsync(response);

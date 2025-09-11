@@ -9,10 +9,10 @@ namespace EpinelPS.LobbyServer.Stage
     {
         protected override async Task HandleAsync()
         {
-            var req = await ReadData<ReqClearStage>();
+            ReqClearStage req = await ReadData<ReqClearStage>();
 
-            var response = new ResClearStage();
-            var user = GetUser();
+            ResClearStage response = new();
+            User user = GetUser();
 
             Console.WriteLine($"Stage " + req.StageId + " completed, result is " + req.BattleResult);
 
@@ -28,10 +28,13 @@ namespace EpinelPS.LobbyServer.Stage
 
         public static ResClearStage CompleteStage(User user, int StageId, bool forceCompleteScenarios = false)
         {
-            var response = new ResClearStage();
-            var clearedStage = GameData.Instance.GetStageData(StageId) ?? throw new Exception("cleared stage cannot be null");
+            ResClearStage response = new()
+            {
+                OutpostTimeRewardBuff = new()
+            };
+            CampaignStageRecord clearedStage = GameData.Instance.GetStageData(StageId) ?? throw new Exception("cleared stage cannot be null");
 
-            var stageMapId = GameData.Instance.GetMapIdFromChapter(clearedStage.chapter_id, clearedStage.mod);
+            string stageMapId = GameData.Instance.GetMapIdFromChapter(clearedStage.chapter_id, clearedStage.chapter_mod);
             
             if (user.FieldInfoNew.Count == 0)
             {
@@ -39,7 +42,7 @@ namespace EpinelPS.LobbyServer.Stage
             }
 
             DoQuestSpecificUserOperations(user, StageId);
-            var rewardData = GameData.Instance.GetRewardTableEntry(clearedStage.reward_id);
+            RewardTableRecord? rewardData = GameData.Instance.GetRewardTableEntry(clearedStage.reward_id);
 
             if (forceCompleteScenarios)
             {
@@ -53,8 +56,8 @@ namespace EpinelPS.LobbyServer.Stage
                 }
             }
 
-            var oldLevel = user.userPointData.UserLevel;
-            var oldOutpostLevel = user.OutpostBattleLevel.Level;
+            int oldLevel = user.userPointData.UserLevel;
+            int oldOutpostLevel = user.OutpostBattleLevel.Level;
 
             if (rewardData != null)
                 response.StageClearReward = RewardUtils.RegisterRewardsForUser(user, rewardData);
@@ -91,7 +94,7 @@ namespace EpinelPS.LobbyServer.Stage
 
             if (clearedStage.stage_category == StageCategory.Normal || clearedStage.stage_category == StageCategory.Boss || clearedStage.stage_category == StageCategory.Hard)
             {
-                if (clearedStage.mod == ChapterMod.Hard)
+                if (clearedStage.chapter_mod == ChapterMod.Hard)
                 {
                     if (StageId > user.LastHardStageCleared)
                         user.LastHardStageCleared = StageId;
@@ -102,13 +105,9 @@ namespace EpinelPS.LobbyServer.Stage
                         user.LastNormalStageCleared = StageId;
                 }
             }
-            else if (clearedStage.stage_category == StageCategory.Extra)
-            {
-                // TODO
-            }
             else
             {
-                Console.WriteLine("Unknown stage category " + clearedStage.stage_category);
+                Logging.Warn("Unknown stage category " + clearedStage.stage_category);
             }
 
             if (clearedStage.stage_type != StageType.Sub)
@@ -135,7 +134,7 @@ namespace EpinelPS.LobbyServer.Stage
             // Mark chapter as completed if boss stage was completed
             if (clearedStage.stage_category == StageCategory.Boss && clearedStage.stage_type == StageType.Main)
             {
-                if (clearedStage.mod == ChapterMod.Hard)
+                if (clearedStage.chapter_mod == ChapterMod.Hard)
                     user.AddTrigger(TriggerType.HardChapterClear, 1, clearedStage.chapter_id);
                 else
                     user.AddTrigger(TriggerType.ChapterClear, 1, clearedStage.chapter_id);
@@ -151,11 +150,12 @@ namespace EpinelPS.LobbyServer.Stage
 
         private static void DoQuestSpecificUserOperations(User user, int clearedStageId)
         {
-            var quest = GameData.Instance.GetMainQuestForStageClearCondition(clearedStageId);
+            MainQuestCompletionRecord? quest = GameData.Instance.GetMainQuestForStageClearCondition(clearedStageId);
+
+            user.AddTrigger(TriggerType.CampaignClear, 1, clearedStageId);
             if (quest != null)
             {
                 user.SetQuest(quest.id, false);
-                user.AddTrigger(TriggerType.CampaignClear, 1, clearedStageId);
                 user.AddTrigger(TriggerType.MainQuestClear, 1, quest.id);
             }
 
@@ -167,21 +167,21 @@ namespace EpinelPS.LobbyServer.Stage
                 // CSN: Character Serial Number
 
                 // create a squad with first 5 characters
-                var team1 = new NetUserTeamData
+                NetUserTeamData team1 = new()
                 {
                     Type = 1,
                     LastContentsTeamNumber = 1
                 };
 
-                user.Characters.Add(new Database.Character() { Csn = 47263455, Tid = 201001 });
-                user.Characters.Add(new Database.Character() { Csn = 47273456, Tid = 330501 });
-                user.Characters.Add(new Database.Character() { Csn = 47263457, Tid = 130201 });
-                user.Characters.Add(new Database.Character() { Csn = 47263458, Tid = 230101 });
-                user.Characters.Add(new Database.Character() { Csn = 47263459, Tid = 301201 });
+                user.Characters.Add(new CharacterModel() { Csn = 47263455, Tid = 201001 });
+                user.Characters.Add(new CharacterModel() { Csn = 47273456, Tid = 330501 });
+                user.Characters.Add(new CharacterModel() { Csn = 47263457, Tid = 130201 });
+                user.Characters.Add(new CharacterModel() { Csn = 47263458, Tid = 230101 });
+                user.Characters.Add(new CharacterModel() { Csn = 47263459, Tid = 301201 });
 
                 user.BondInfo.Add(new() { NameCode = 3001, Lv = 1 });
                 user.BondInfo.Add(new() { NameCode = 3005, Lv = 1 });
-                
+
                 user.AddTrigger(TriggerType.ObtainCharacter, 1, 3001);
                 user.AddTrigger(TriggerType.ObtainCharacter, 1, 1018);
                 user.AddTrigger(TriggerType.ObtainCharacter, 1, 1015);
@@ -196,7 +196,7 @@ namespace EpinelPS.LobbyServer.Stage
 
                 for (int i = 1; i < 6; i++)
                 {
-                    var character = user.Characters[i - 1];
+                    CharacterModel character = user.Characters[i - 1];
                     team1Sub.Slots.Add(new NetTeamSlot() { Slot = i, Value = character.Csn });
                 }
                 team1.Teams.Add(team1Sub);

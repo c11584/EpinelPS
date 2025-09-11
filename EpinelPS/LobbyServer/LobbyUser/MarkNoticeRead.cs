@@ -1,5 +1,4 @@
 using EpinelPS.Utils;
-using EpinelPS.Data; // For GameData access
 
 namespace EpinelPS.LobbyServer.LobbyUser
 {
@@ -8,9 +7,9 @@ namespace EpinelPS.LobbyServer.LobbyUser
     {
         protected override async Task HandleAsync()
         {
-            var req = await ReadData<ReqRecordNoticeLog>();
-            var r = new ResRecordNoticeLog();
-            var user = GetUser();
+            ReqRecordNoticeLog req = await ReadData<ReqRecordNoticeLog>();
+            ResRecordNoticeLog r = new();
+            User user = GetUser();
 
             // TODO
 

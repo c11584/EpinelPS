@@ -1,4 +1,4 @@
-﻿using EpinelPS.Utils;
+using EpinelPS.Utils;
 
 namespace EpinelPS.LobbyServer.Character
 {
@@ -7,20 +7,20 @@ namespace EpinelPS.LobbyServer.Character
     {
         protected override async Task HandleAsync()
         {
-            var req = await ReadData<ReqGetAttractiveList>();
-            var user = GetUser();
+            ReqGetAttractiveList req = await ReadData<ReqGetAttractiveList>();
+            User user = GetUser();
 
-            ResGetAttractiveList response = new();
-            response.CounselAvailableCount = 3; // TODO
+            ResGetAttractiveList response = new()
+            {
+                CounselAvailableCount = 3 // TODO
+            };
 
-            foreach(var item in user.BondInfo)
+            foreach (NetUserAttractiveData item in user.BondInfo)
             {
                 response.Attractives.Add(item);
                 item.CanCounselToday = true;
-                item.Exp = 9999; // TODO
-                item.Lv = 10;
+                
             }
-
 
             // TODO: Validate response from real server and pull info from user info
             await WriteDataAsync(response);

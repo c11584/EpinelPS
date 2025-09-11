@@ -5,7 +5,7 @@ using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Paseto.Builder;
 using Paseto;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace EpinelPS.LobbyServer.Auth
 {
@@ -14,11 +14,11 @@ namespace EpinelPS.LobbyServer.Auth
     {
         protected override async Task HandleAsync()
         {
-            var req = await ReadData<ReqEnterServer>();
+            ReqEnterServer req = await ReadData<ReqEnterServer>();
 
             // request has auth token
             UsedAuthToken = req.AuthToken;
-            foreach (var item in JsonDb.Instance.LauncherAccessTokens)
+            foreach (AccessToken item in JsonDb.Instance.LauncherAccessTokens)
             {
                 if (item.Token == UsedAuthToken)
                 {
@@ -26,33 +26,37 @@ namespace EpinelPS.LobbyServer.Auth
                 }
             }
             if (UserId == 0) throw new BadHttpRequestException("unknown auth token", 403);
-            var user = GetUser();
+            User user = GetUser();
 
-            var rsp = LobbyHandler.GenGameClientTok(req.ClientPublicKey, UserId);
+            GameClientInfo rsp = LobbyHandler.GenGameClientTok(req.ClientPublicKey, UserId);
 
-            var token = new PasetoBuilder().Use(ProtocolVersion.V4, Purpose.Local)
+            string token = new PasetoBuilder().Use(ProtocolVersion.V4, Purpose.Local)
                                .WithKey(JsonDb.Instance.LauncherTokenKey, Encryption.SymmetricKey)
                                .AddClaim("userid", UserId)
                                .IssuedAt(DateTime.UtcNow)
                                .Expiration(DateTime.UtcNow.AddDays(2))
                                .Encode();
 
-            var encryptionToken = new PasetoBuilder().Use(ProtocolVersion.V4, Purpose.Local)
+            string encryptionToken = new PasetoBuilder().Use(ProtocolVersion.V4, Purpose.Local)
                                .WithKey(JsonDb.Instance.LauncherTokenKey, Encryption.SymmetricKey)
-                               .AddClaim("data", JsonConvert.SerializeObject(rsp))
+                               .AddClaim("data", JsonSerializer.Serialize(rsp))
                                .IssuedAt(DateTime.UtcNow)
                                .Expiration(DateTime.UtcNow.AddDays(2))
                                .Encode();
 
 
-            ResEnterServer response = new();
-         
-            response.GameClientToken = token;
-            response.FeatureDataInfo = new NetFeatureDataInfo() {  }; // TODO
-            response.Identifier = new NetLegacyUserIdentifier() { Server = 1000, Usn = (long)user.ID };
-            response.ShouldRestartAfter = Duration.FromTimeSpan(TimeSpan.FromSeconds(86400));
+            ResEnterServer response = new()
+            {
+                GameClientToken = token,
+                FeatureDataInfo = new NetFeatureDataInfo() { }, // TODO
+                Identifier = new NetLegacyUserIdentifier() { Server = 1000, Usn = (long)user.ID },
+                ShouldRestartAfter = Duration.FromTimeSpan(TimeSpan.FromSeconds(86400)),
+
+                EncryptionToken = ByteString.CopyFromUtf8(encryptionToken)
+            };
+
+            user.ResetDataIfNeeded();
             
-            response.EncryptionToken = ByteString.CopyFromUtf8(encryptionToken);
             await WriteDataAsync(response);
         }
     }

@@ -1,5 +1,4 @@
-﻿using EpinelPS.Database;
-using EpinelPS.Utils;
+﻿using EpinelPS.Utils;
 using EpinelPS.Data; // For GameData access
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,10 +10,10 @@ namespace EpinelPS.LobbyServer.Event
     {
         protected override async Task HandleAsync()
         {
-            var req = await ReadData<ReqGetEventScenarioData>();
-            var user = GetUser();
+            ReqGetEventScenarioData req = await ReadData<ReqGetEventScenarioData>();
+            User user = GetUser();
 
-            var response = new ResGetEventScenarioData();
+            ResGetEventScenarioData response = new();
 
             /*
             if (user.EventInfo.TryGetValue(req.EventId, out EventData? data))

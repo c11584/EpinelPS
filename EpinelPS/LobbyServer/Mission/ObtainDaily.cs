@@ -9,21 +9,21 @@ namespace EpinelPS.LobbyServer.Mission
     {
         protected override async Task HandleAsync()
         {
-            var req = await ReadData<ReqObtainDailyMissionReward>();
-            var user = GetUser();
+            ReqObtainDailyMissionReward req = await ReadData<ReqObtainDailyMissionReward>();
+            User user = GetUser();
 
-            var response = new ResObtainDailyMissionReward();
+            ResObtainDailyMissionReward response = new();
 
             List<NetRewardData> rewards = [];
 
             int total_points = 0;
 
-            foreach (var item in req.TidList)
+            foreach (int item in req.TidList)
             {
                 if (user.ResetableData.CompletedDailyMissions.Contains(item))
                 {
-                    Console.WriteLine("already completed daily mission");
-                     continue;
+                    Logging.WriteLine("already completed daily mission", LogType.Warning);
+                    continue;
                 }
 
                 if (!GameData.Instance.TriggerTable.TryGetValue(item, out TriggerRecord? key)) throw new Exception("unknown TID");
@@ -33,7 +33,7 @@ namespace EpinelPS.LobbyServer.Mission
                 if (key.reward_id != 0)
                 {
                     // Actual reward
-                    var rewardRecord = GameData.Instance.GetRewardTableEntry(key.reward_id) ?? throw new Exception("unable to lookup reward");
+                    RewardTableRecord rewardRecord = GameData.Instance.GetRewardTableEntry(key.reward_id) ?? throw new Exception("unable to lookup reward");
                     rewards.Add(RewardUtils.RegisterRewardsForUser(user, rewardRecord));
                 }
                 else

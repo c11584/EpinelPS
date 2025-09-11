@@ -8,23 +8,27 @@ namespace EpinelPS.LobbyServer.Stage
     {
         protected override async Task HandleAsync()
         {
-            var req = await ReadData<ReqFastClearCampaignStage>();
+            ReqFastClearCampaignStage req = await ReadData<ReqFastClearCampaignStage>();
 
-            var user = GetUser();
+            User user = GetUser();
 
             Console.WriteLine($"Stage " + req.CampaignStageId + " completed using quick battle");
 
-            var rsp = ClearStage.CompleteStage(user, req.CampaignStageId);
+            ResClearStage rsp = ClearStage.CompleteStage(user, req.CampaignStageId);
 
-            var response = new ResFastClearCampaignStage()
+            ResFastClearCampaignStage response = new()
             {
                 OutpostBattle = rsp.OutpostBattle,
                 OutpostBattleLevelReward = rsp.OutpostBattleLevelReward,
                 StageClearReward = rsp.StageClearReward,
-                UserLevelUpReward = rsp.UserLevelUpReward
+                UserLevelUpReward = rsp.UserLevelUpReward,
+                OutpostTimeRewardBuff = new()
             };
 
-            response.OutpostTimeRewardBuff.TimeRewardBuffs.AddRange(rsp.OutpostTimeRewardBuff.TimeRewardBuffs);
+            if (rsp.OutpostTimeRewardBuff != null)
+            {
+                response.OutpostTimeRewardBuff.TimeRewardBuffs.AddRange(rsp.OutpostTimeRewardBuff.TimeRewardBuffs);
+            }
             
             await WriteDataAsync(response);
         }

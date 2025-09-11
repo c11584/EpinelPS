@@ -10,10 +10,10 @@
 		<SelfContained>true</SelfContained>
 		<IncludeNativeLibrariesForSelfExtract>True</IncludeNativeLibrariesForSelfExtract>
 		<NoWarn>$(NoWarn);SYSLIB0057</NoWarn>
-		<Version>0.134.4.3</Version>
+		<Version>0.135.4.3</Version>
 		<CETCompat>false</CETCompat>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-
+		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 
 	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -26,14 +26,18 @@
 		<PackageReference Include="DnsClient" Version="1.8.0" />
 		<PackageReference Include="Google.Api.CommonProtos" Version="2.17.0" />
 		<PackageReference Include="Google.Protobuf.Tools" Version="3.31.1" />
-		<PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
+		<PackageReference Include="Grpc.Tools" Version="2.72.0">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 		<PackageReference Include="MemoryPack" Version="1.21.4" />
 		<PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="6.0.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="Paseto.Core" Version="1.4.1" />
 		<PackageReference Include="PeterO.Cbor" Version="4.5.5" />
 		<PackageReference Include="SharpZipLib" Version="1.4.2" />
 		<PackageReference Include="Sodium.Core" Version="1.4.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+
 	</ItemGroup>
 
 	<ItemGroup>
