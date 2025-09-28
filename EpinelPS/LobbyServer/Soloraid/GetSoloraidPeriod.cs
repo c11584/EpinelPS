@@ -1,6 +1,6 @@
 ﻿using EpinelPS.Utils;
 
-namespace EpinelPS.LobbyServer.Soloraid
+namespace EpinelPS.LobbyServer.SoloraId
 {
     [PacketPath("/soloraid/getperiod")]
     public class GetSoloraidPeriod : LobbyMsgHandler
