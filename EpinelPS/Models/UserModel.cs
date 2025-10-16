@@ -53,6 +53,7 @@ public class User
     public WeeklyResetableData WeeklyResetableData = new();
     public List<ItemData> Items = [];
     public List<CharacterModel> Characters = [];
+    public List<EquipmentAwakeningData> EquipmentAwakenings = [];
     public long[] RepresentationTeamDataNew = [];
     public Dictionary<int, ClearedTutorialData> ClearedTutorialData = [];
 
@@ -85,7 +86,7 @@ public class User
     public List<int> Memorial = [];
     public List<int> JukeboxBgm = [];
     public List<NetUserFavoriteItemData> FavoriteItems = [];
-
+    
     public List<NetUserFavoriteItemQuestData> FavoriteItemQuests = [];
     public Dictionary<int, int> TowerProgress = [];
 
@@ -137,7 +138,7 @@ public class User
         {
             BadgeContent = type,
             Location = location,
-            BadgeGuId = Guid.NewGuid().ToString(),
+            BadgeGuid = Guid.NewGuid().ToString(),
             Seq = LastBadgeSeq++
         };
 

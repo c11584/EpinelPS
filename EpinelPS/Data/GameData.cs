@@ -174,7 +174,7 @@ namespace EpinelPS.Data
         public readonly Dictionary<int, ProductOfferRecord> ProductOffers = [];
 
         [LoadRecord("PopupPackageListTable.json", "Id")]
-        public readonly Dictionary<int, ProductOfferRecord> PopupPackages = [];
+        public readonly Dictionary<int, PopupPackageListRecord> PopupPackages = [];
 
         [LoadRecord("InterceptNormalTable.json", "Id")]
         public readonly Dictionary<int, InterceptNormalRecord> InterceptNormal = [];
@@ -248,12 +248,20 @@ namespace EpinelPS.Data
         [LoadRecord("EventMvgQuestTable.json", "Id")]
         public readonly Dictionary<int, EventMVGQuestRecord_Raw> EventMvgQuestTable = [];
 
-        [LoadRecord("EventMvgQuestTable.json", "Id")]
+        [LoadRecord("EventMvgShopTable.json", "Id")]
         public readonly Dictionary<int, EventMVGShopRecord_Raw> EventMvgShopTable = [];
 
         [LoadRecord("EventMVGMissionTable.json", "Id")]
         public readonly Dictionary<int, EventMVGMissionRecord_Raw> EventMvgMissionTable = [];
 
+        [LoadRecord("EquipmentOptionTable.json", "Id")]
+        public readonly Dictionary<int, EquipmentOptionRecord> EquipmentOptionTable = [];
+
+        [LoadRecord("EquipmentOptionCostTable.json", "Id")]
+        public readonly Dictionary<int, EquipmentOptionCostRecord> EquipmentOptionCostTable = [];
+
+        [LoadRecord("ItemEquipCorpSettingTable.json", "Id")]
+        public readonly Dictionary<int, ItemEquipCorpSettingRecord> ItemEquipCorpSettingTable = [];
         static async Task<GameData> BuildAsync()
         {
             await Load();
@@ -718,17 +726,10 @@ namespace EpinelPS.Data
                 return data.HardFieldId;
             else return data.FieldId;
         }
-        internal string GetMapIdFromChapter(int chapter, string mod)
-        {
-            CampaignChapterRecord data = ChapterCampaignData[chapter - 1];
-            if (mod == "Hard")
-                return data.HardFieldId;
-            else return data.FieldId;
-        }
 
         internal int GetConditionReward(int groupId, long damage)
         {
-            IEnumerable<KeyValuePair<int, ConditionRewardRecord>> results = ConditionRewards.Where(x => x.Value.Group == groupId && x.Value.ValueMin <= damage && x.Value.ValueMax >= damage);
+            IEnumerable<KeyValuePair<int, ConditionRewardRecord>> results = ConditionRewards.Where(x => x.Value.Group == groupId && x.Value.ValueMin <= damage && (x.Value.ValueMax == 0 || x.Value.ValueMax >= damage));
             if (results.Any())
                 return results.FirstOrDefault().Value.RewardId;
             else return 0;

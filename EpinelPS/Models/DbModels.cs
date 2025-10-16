@@ -65,6 +65,19 @@ namespace EpinelPS.Models
         // For harmony cubes that can be equipped to multiple characters
         public List<long> CsnList = [];
     }
+    
+    public class EquipmentAwakeningData
+    {
+        public long Isn;
+        public NetEquipmentAwakeningOption Option;
+        public bool IsNewData; 
+        
+        public EquipmentAwakeningData()
+        {
+            Option = new NetEquipmentAwakeningOption();
+            IsNewData = false; 
+        }
+    }
     public class EventData
     {
         public List<string> CompletedScenarios = [];
@@ -109,9 +122,9 @@ namespace EpinelPS.Models
         public List<int> CompletedDailyMissions = [];
         public int DailyMissionPoints;
         public SimroomData SimRoomData = new();
-        
-        public bool UnlimitedCounseling = false;
+
         public Dictionary<int, int> DailyCounselCount = [];
+    
     }
     public class WeeklyResetableData
     {
@@ -180,7 +193,7 @@ namespace EpinelPS.Models
         public string Location = "";
         public long Seq;
         public BadgeContents BadgeContent;
-        public string BadgeGuId = "";
+        public string BadgeGuid = "";
 
         public BadgeModel() { }
         public BadgeModel(NetBadge badge)
@@ -188,7 +201,7 @@ namespace EpinelPS.Models
             Location = badge.Location;
             Seq = badge.Seq;
             BadgeContent = badge.BadgeContent;
-            BadgeGuId = new Guid([.. badge.BadgeGuid]).ToString();
+            BadgeGuid = new Guid([.. badge.BadgeGuid]).ToString();
         }
 
         public NetBadge ToNet()
@@ -196,7 +209,7 @@ namespace EpinelPS.Models
             return new NetBadge()
             {
                 BadgeContent = BadgeContent,
-                BadgeGuid = ByteString.CopyFrom(new Guid(BadgeGuId).ToByteArray()),
+                BadgeGuid = ByteString.CopyFrom(new Guid(BadgeGuid).ToByteArray()),
                 Location = Location,
                 Seq = Seq
             };
